@@ -1,0 +1,19 @@
+{
+    "name": "js3/approval-flow",
+    "description": "",
+    "autoload": {
+        "psr-4": {
+            "Js3\\ApprovalFlow\\": "src/"
+        }
+    },
+    "require": {
+        "illuminate/support": "^5.2|^6|^7|^8"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Js3\\ApprovalFlow\\ApprovalFlowProvider"
+            ]
+        }
+    }
+}

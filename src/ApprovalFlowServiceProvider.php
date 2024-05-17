@@ -75,7 +75,7 @@ class ApprovalFlowServiceProvider extends ServiceProvider
     }
 
     protected function getConfig($key,$default = null) {
-        return config("approval-flow.${$key}",$default);
+        return config("approval-flow." . $key,$default);
     }
 
     private function getConfigFilePath() {

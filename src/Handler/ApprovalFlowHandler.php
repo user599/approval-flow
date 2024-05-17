@@ -4,7 +4,6 @@ namespace Js3\ApprovalFlow\Handler;
 
 
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
-use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
 
 interface ApprovalFlowHandler
@@ -68,7 +67,7 @@ interface ApprovalFlowHandler
      * @param $instance_id
      * @return mixed
      */
-    public function getStatus($instance_id) : ApprovalFlowInstance;
+    public function getStatus($instance_id);
 
 
 }

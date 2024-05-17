@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Js3\ApprovalFlow\Interceptor;
+namespace Js3\ApprovalFlow\Entity\Interceptor;
 
 
 

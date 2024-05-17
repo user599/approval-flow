@@ -26,7 +26,7 @@ class ApprovalFlowServiceProvider extends ServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(
-            __DIR__.'/config/approval-flow.php', 'approval-flow'
+            __DIR__.'../config/approval-flow.php', 'approval-flow'
         );
 
         $this->registerProvider();
@@ -48,7 +48,7 @@ class ApprovalFlowServiceProvider extends ServiceProvider
     public function boot()
     {
        $this->publishes([
-           __DIR__ . '/config/approval-flow.php' => config_path('approval-flow.php'),
+           __DIR__ . '../config/approval-flow.php' => config_path('approval-flow.php'),
        ]);
 
 

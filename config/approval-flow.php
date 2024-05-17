@@ -6,7 +6,10 @@
  */
 
 return [
-    "url" => env("APPROVAL_FLOW_URL"),
+
+    "http" => [
+        "baseUri" => env("APPROVAL_FLOW_BASE_URI")
+    ],
 
     "aes" => [
         "key" => env("APPROVAL_FLOW_AES_KEY"),
@@ -14,9 +17,10 @@ return [
     ],
 
     "provider" => [
-
         "encrypter" => \Js3\ApprovalFlow\Encrypter\AesEncrypter::class,
-
-
     ],
+
+    "resolver" => [
+
+    ]
 ];

@@ -1,19 +1,31 @@
 {
     "name": "js3/approval-flow",
     "description": "",
+    "require": {
+        "php": "^7.2",
+        "guzzlehttp/guzzle": "^7.8",
+        "illuminate/support": "^7.30",
+        "illuminate/database": "^7.30"
+
+    },
     "autoload": {
         "psr-4": {
             "Js3\\ApprovalFlow\\": "src/"
         }
     },
-    "require": {
-        "illuminate/support": "^5.2|^6|^7|^8"
+    "autoload-dev": {
+        "psr-4": {
+            "Js3\\ApprovalFlow\\Test\\": "tests/"
+        }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Js3\\ApprovalFlow\\ApprovalFlowProvider"
+                "ApprovalFlowServiceProvider"
             ]
         }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.5"
     }
 }

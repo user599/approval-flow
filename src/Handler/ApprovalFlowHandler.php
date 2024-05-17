@@ -19,7 +19,7 @@ interface ApprovalFlowHandler
      * @date: 2024/5/17 14:45
      * @remark:
      */
-    public function generate($form_data = []) : ApprovalFlowInstance;
+    public function generate($form_data = []);
 
     /**
      * @explain: 执行审批流

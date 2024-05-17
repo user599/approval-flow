@@ -40,15 +40,14 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     private $http_client;
 
     /**
-     * @param $approval_flow_slug
-     * @param AuthInfo $auth_info
+     * @param HttpClient $http_client http客户端
      */
     public function __construct(HttpClient $http_client)
     {
         $this->http_client = $http_client;
     }
 
-    public function generate($form_data = []): ApprovalFlowInstance
+    public function generate($form_data = [])
     {
         $data =[
             "form_data" => $form_data,
@@ -56,7 +55,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
         ];
         $res = $this->http_client->httpPostJson("/api/approval-flow/generate",$data);
         //TODO 将生成的结构存储到数据库中
-        return $res;
+        return new ApprovalFlowInstance($res);
     }
 
     public function execute($instance_id, $args): ApprovalFlowContext

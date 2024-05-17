@@ -46,7 +46,6 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     public function __construct(HttpClient $http_client)
     {
         $this->http_client = $http_client;
-        $this->http_client->setAuthInfo($this->setAuthInfo());
     }
 
     public function generate($form_data = []): ApprovalFlowInstance
@@ -91,21 +90,36 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     }
 
     /**
-     * @explain:审批额外操作
-     * @param
+     * @explain: 设置用户身份信息
+     * @param AuthInfo $auth_info
+     * @return $this
+     * @author: wzm
+     * @date: 2024/5/17 15:06
+     * @remark: TODO 想想别的更高的解决方法，这个样子需要每次调用上述审批方法时必须先指定用户身份
+     */
+    public function setAuthInfo(AuthInfo $auth_info)
+    {
+        $this->auth_info = $auth_info;
+        $this->http_client->setAuthInfo($auth_info);
+        return $this;
+    }
+
+    /**
+     * @explain: 审批额外操作
+     * @param AuditNode $node
      * @return mixed
      * @author: wzm
-     * @date: 2024/5/17 14:50
+     * @date: 2024/5/17 15:08
      * @remark:
      */
     abstract function handleAuditExtraOperate(AuditNode $node);
 
     /**
      * @explain: 抄送额外操作
-     * @param $carbon_copy_slug
+     * @param CarbonCopyNode $node
      * @return mixed
      * @author: wzm
-     * @date: 2024/5/17 14:50
+     * @date: 2024/5/17 15:08
      * @remark:
      */
     abstract function handleCarbonCopy(CarbonCopyNode $node);

@@ -70,24 +70,5 @@ interface ApprovalFlowHandler
      */
     public function getStatus($instance_id) : ApprovalFlowInstance;
 
-    /**
-     * @explain:设置当前登陆人信息
-     * @param $auth_info
-     * @return mixed
-     * @author: wzm
-     * @date: 2024/5/17 14:49
-     * @remark:
-     */
-    public function setAuthInfo(AuthInfo $auth_info);
-
-
-    /**
-     * @explain: 获取当前审批流标识
-     * @return string
-     * @author: wzm
-     * @date: 2024/5/17 14:46
-     * @remark:
-     */
-    public function getApprovalFlowSlug() : string;
 
 }

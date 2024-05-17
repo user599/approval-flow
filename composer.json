@@ -20,7 +20,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "ApprovalFlowServiceProvider"
+                "Js3\\ApprovalFlow\\ApprovalFlowServiceProvider"
             ]
         }
     },

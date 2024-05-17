@@ -7,6 +7,7 @@ use GuzzleHttp\Client;
 use Illuminate\Support\ServiceProvider;
 use Js3\ApprovalFlow\Encrypter\AesEncrypter;
 use Js3\ApprovalFlow\Encrypter\Encrypter;
+use Js3\ApprovalFlow\Generators\RelateApplicationFactory;
 use Js3\ApprovalFlow\HttpClient\HttpClient;
 
 /**
@@ -60,6 +61,7 @@ class ApprovalFlowServiceProvider extends ServiceProvider
             );
         });
 
+        $this->registerCreator();
 
     }
 
@@ -87,6 +89,12 @@ class ApprovalFlowServiceProvider extends ServiceProvider
     protected function getConfig($key, $default = null)
     {
         return config("approval-flow." . $key, $default);
+    }
+
+    private function registerCreator() {
+        foreach ($this->getConfig("generator",[]) as $slug => $generator_clazz) {
+            RelateApplicationFactory::register($slug,$generator_clazz);
+        }
     }
 
     private function getConfigFilePath()

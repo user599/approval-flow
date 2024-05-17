@@ -44,7 +44,7 @@ class AesEncrypter implements Encrypter
         if($padding == 0){
             return $decrypted;
         }
-        return substr($decrypted, 0, -$padding);
+        return base64_decode(substr($decrypted, 0, -$padding),true);
     }
 
     //填充

@@ -27,7 +27,7 @@ class RelateApplicationFactory
      */
     public static function chooseGenerator(string $slug)
     {
-        $generator_clazz = self::$generator_list[strtolower($slug)];
+        $generator_clazz = self::$generator_list[strtolower($slug)]??null;
         if (empty($generator_clazz)) {
             throw new ApprovalFlowException("未知的关联应用标识{$slug},请在配置文件配置");
         }

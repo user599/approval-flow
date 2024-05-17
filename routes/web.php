@@ -10,6 +10,6 @@ use Illuminate\Support\Facades\Route;
 Route::prefix("api/approval-flow")->group(function () {
 
     Route::get("application/{slug}","\Js3\ApprovalFlow\Controller\ApprovalFlowApplicationController@getApplicationInfo");
-    Route::get("application/{slug}/children","\Js3\ApprovalFlow\Controller\ApprovalFlowApplicationController@getApplicationChildren");
+    Route::get("application/{slug}/{id}","\Js3\ApprovalFlow\Controller\ApprovalFlowApplicationController@getApplicationChildren");
 
 });

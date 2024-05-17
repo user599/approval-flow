@@ -4,7 +4,6 @@
 namespace Js3\ApprovalFlow\Controller;
 
 
-use Doctrine\Inflector\GenericLanguageInflectorFactory;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -36,9 +35,8 @@ class ApprovalFlowApplicationController extends Controller
         $this->application = $application;
         //验证身份信息
         try {
-            $auth_data
-                = $encrypter->decrypt($request->header("token", ""));
-            if (empty($auth_data) ) {
+            $str_token = $request->header("token");
+            if (empty($str_token) ) {
                 //调试用
                 if (!$request->exists("debug")) {
                     throw new ApprovalFlowException("未知的身份信息");
@@ -46,6 +44,7 @@ class ApprovalFlowApplicationController extends Controller
                     $this->auth_info = new AuthInfo(["id"=>15],AuthInfo::AUTH_TYPE_FRONT);
                 }
             } else {
+                $auth_info = $encrypter->decrypt($str_token);
                 $this->auth_info = new AuthInfo($auth_data['auth_data'],$auth_data['auth_type']);
             }
         } catch (\Exception $e) {
@@ -58,15 +57,15 @@ class ApprovalFlowApplicationController extends Controller
     {
         /** @var RelateApplicationGenerator $generator */
         $generator = $this->application->make(RelateApplicationFactory::chooseGenerator($slug));
-        return $generator->options();
+        return $generator->options($this->auth_info);
 
     }
 
-    public function getApplicationChildren($slug,Application $application)
+    public function getApplicationChildren($slug,$id,Application $application)
     {
         /** @var RelateApplicationGenerator $generator */
         $generator = $this->application->make(RelateApplicationFactory::chooseGenerator($slug));
-        return $generator->children($this->auth_info);
+        return $generator->children($this->auth_info,$id);
     }
 
 }

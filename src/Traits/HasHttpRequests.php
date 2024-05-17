@@ -27,7 +27,7 @@ trait HasHttpRequests
     /**
      * @var \GuzzleHttp\ClientInterface
      */
-    protected $httpClient;
+    protected $client;
 
     /**
      * @var array
@@ -71,13 +71,13 @@ trait HasHttpRequests
     /**
      * Set GuzzleHttp\Client.
      *
-     * @param \GuzzleHttp\ClientInterface $httpClient
+     * @param \GuzzleHttp\ClientInterface $client
      *
      * @return $this
      */
-    public function setHttpClient(ClientInterface $httpClient)
+    public function setClient(ClientInterface $client)
     {
-        $this->httpClient = $httpClient;
+        $this->client = $client;
 
         return $this;
     }
@@ -87,9 +87,9 @@ trait HasHttpRequests
      *
      * @return ClientInterface
      */
-    public function getHttpClient(): ClientInterface
+    public function getClient(): ClientInterface
     {
-        return $this->httpClient;
+        return $this->client;
     }
 
     /**
@@ -144,7 +144,7 @@ trait HasHttpRequests
             $options['base_uri'] = $this->base_uri;
         }
 
-        $response = $this->getHttpClient()->request($method, $url, $options);
+        $response = $this->getClient()->request($method, $url, $options);
         $response->getBody()->rewind();
 
         return $response;

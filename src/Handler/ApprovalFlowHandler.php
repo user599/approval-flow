@@ -2,65 +2,92 @@
 
 namespace Js3\ApprovalFlow\Handler;
 
-use App\ApprovalFlow\Entity\AuthInfo;
+
+use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
+use Js3\ApprovalFlow\Entity\AuthInfo;
+use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
 
 interface ApprovalFlowHandler
 {
 
 
     /**
-     * @param $slug 审批流
-     * @return mixed
-     */
-    public function generate($form_data);
-
-    /**
-     * @explain:执行审批流
-     * @return mixed
+     * @explain: 生成审批流
+     * @param $form_data
+     * @return ApprovalFlowInstance
      * @author: wzm
-     * @date: 2024/5/14 15:05
+     * @date: 2024/5/17 14:45
      * @remark:
      */
-    public function execute($instance_id,$form_data);
+    public function generate($form_data = []) : ApprovalFlowInstance;
 
     /**
-     * @explain:审核审核通过
-     * @param $snapshot_id
-     * @param $remark
-     * @param $operate_time
-     * @return mixed
-     */
-    public function auditPass($snapshot_id, $remark = null,$operate_time = null);
-
-    /**
-     * @explain:审核通过
-     * @param $snapshot_id
-     * @param $remark
-     * @param $operate_time
-     * @return mixed
+     * @explain: 执行审批流
+     * @param $instance_id
+     * @param $args
+     * @return ApprovalFlowContext
      * @author: wzm
-     * @date: 2024/5/14 15:05
+     * @date: 2024/5/17 14:45
      * @remark:
      */
-    public function reject($snapshot_id, $remark = null,$operate_time = null);
+    public function execute($instance_id,$args) : ApprovalFlowContext;
+
+    /**
+     * @explain: 通过
+     * @param $node_id
+     * @param $remark
+     * @param $operate_time
+     * @return ApprovalFlowContext
+     * @author: wzm
+     * @date: 2024/5/17 14:45
+     * @remark:
+     */
+    public function auditPass($node_id, $remark = null,$operate_time = null) : ApprovalFlowContext;
+
+    /**
+     * @explain: 拒绝
+     * @param $node_id
+     * @param $remark
+     * @param $operate_time
+     * @return ApprovalFlowContext
+     * @author: wzm
+     * @date: 2024/5/17 14:45
+     * @remark:
+     */
+    public function reject($snapshot_id, $remark = null,$operate_time = null) : ApprovalFlowContext;
 
     /**
      * @explain:撤销
      * @param $remark
      * @return mixed
      */
-    public function revocation($instance_id,$remark = null,$operate_time = null);
-
+    public function revocation($instance_id,$remark = null,$operate_time = null) : ApprovalFlowContext;
 
     /**
      * @explain 获取审批实例状态
      * @param $instance_id
      * @return mixed
      */
-    public function getStatus($instance_id);
+    public function getStatus($instance_id) : ApprovalFlowInstance;
 
-    public function getAuthInfo() : AuthInfo;
+    /**
+     * @explain:设置当前登陆人信息
+     * @param $auth_info
+     * @return mixed
+     * @author: wzm
+     * @date: 2024/5/17 14:49
+     * @remark:
+     */
+    public function setAuthInfo(AuthInfo $auth_info);
 
+
+    /**
+     * @explain: 获取当前审批流标识
+     * @return string
+     * @author: wzm
+     * @date: 2024/5/17 14:46
+     * @remark:
+     */
     public function getApprovalFlowSlug() : string;
 
 }

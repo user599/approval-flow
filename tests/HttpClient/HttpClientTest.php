@@ -9,7 +9,7 @@ use GuzzleHttp\Exception\ServerException;
 use Js3\ApprovalFlow\HttpClient\HttpClient;
 use PHPUnit\Framework\TestCase;
 
-class HttpClientTest extends TestCase
+class HttpClientTest extends \AbstractUnitTest
 {
 
     public function testHttpClientIsPass() {

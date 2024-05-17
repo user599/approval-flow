@@ -7,6 +7,7 @@ namespace Js3\ApprovalFlow\Entity;
 
 use Js3\ApprovalFlow\Entity\Node\AbstractNode;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
+use Js3\ApprovalFlow\Service\ApprovalFlowInstanceService;
 
 /**
  * @explain: 审批流执行器
@@ -27,10 +28,6 @@ abstract class ApprovalFlowContext
      */
     private $current_node;
 
-    /**
-     * @var array 参数信息
-     */
-    private $args;
 
     /**
      * @var array<AbstractNode> 本次执行通过的节点
@@ -38,32 +35,23 @@ abstract class ApprovalFlowContext
     private $executed_nodes = [];
 
     /**
-     * @param ApprovalFlowInstance $approval_flow_instance 审批流实例
-     * @param array|null $args  额外参数
+     * @var ApprovalFlowInstanceService
      */
-    public function __construct(ApprovalFlowInstance $approval_flow_instance, $args = [])
+    private $obj_service_approval_flow_instance;
+
+    public function __construct(ApprovalFlowInstanceService $obj_service_approval_flow_instance)
     {
-        $this->approval_flow_instance = $approval_flow_instance;
-        $this->args = $args;
+        $this->obj_service_approval_flow_instance= $obj_service_approval_flow_instance;
+
     }
 
 
-    /**
-     * @return mixed
-     */
-    public function getArgs()
+    public function generateContextByInstanceId($instance_id)
     {
-        return $this->args;
-    }
+        $obj_instance_info = $this->obj_service_approval_flow_instance->findById($instance_id);
+        //TODO 格式化审批流实例
 
-    /**
-     * @param mixed $args
-     * @return ApprovalFlowContext
-     */
-    public function setArgs($args)
-    {
-        $this->args = $args;
-        return $this;
+
     }
 
     /**

@@ -8,7 +8,11 @@
 return [
 
     "http" => [
-        "baseUri" => env("APPROVAL_FLOW_BASE_URI")
+        "base_uri" => env("APPROVAL_FLOW_BASE_URI"),
+        "headers" => [
+            "Accept" => "Application/json",
+        ],
+        "http_errors" => false
     ],
 
     "aes" => [

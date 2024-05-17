@@ -31,12 +31,6 @@ class ApprovalFlowServiceProvider extends ServiceProvider
 
         $this->registerProvider();
 
-        //注册基础请求
-        $this->app->singleton(HttpClient::class,function () {
-            return new HttpClient(
-                new Client($this->getConfig("http"))
-            );
-        });
     }
 
     /**
@@ -50,6 +44,14 @@ class ApprovalFlowServiceProvider extends ServiceProvider
        $this->publishes([
            $this->getConfigFilePath() => config_path('approval-flow.php'),
        ]);
+
+        //注册基础请求
+        $this->app->singleton(HttpClient::class,function () {
+            return new HttpClient(
+                new Client($this->getConfig("http")),
+                $this->app->make(Encrypter::class)
+            );
+        });
 
 
     }

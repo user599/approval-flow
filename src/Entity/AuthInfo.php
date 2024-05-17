@@ -23,7 +23,7 @@ class AuthInfo
      * @param  $auth_type
      * @param  $auth_data
      */
-    public function __construct($auth_type, $auth_data)
+    public function __construct( $auth_data,$auth_type)
     {
         $this->auth_type = $auth_type;
         $this->auth_data = $auth_data;
@@ -65,6 +65,31 @@ class AuthInfo
         return $this;
     }
 
+    /**
+     * @explain:获取用户id
+     * @return mixed|null
+     * @author: wzm
+     * @date: 2024/5/17 11:12
+     * @remark:
+     */
+    public function getAuthId()
+    {
+        return $this->auth_data["id"]??null;
+    }
+
+    /**
+     * @explain:获取用户凭证负载
+     * @return array
+     * @author: wzm
+     * @date: 2024/5/17 11:13
+     * @remark:
+     */
+    public function getAuthPayload() {
+        return [
+            "id" => $this->getAuthId(),
+            "type" => $this->auth_type
+        ];
+    }
 
 
 

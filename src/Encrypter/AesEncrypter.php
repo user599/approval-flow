@@ -27,6 +27,9 @@ class AesEncrypter implements Encrypter
 
     public function encrypt($payload): string
     {
+        if (!is_string($payload)) {
+            $payload = json_encode($payload);
+        }
         $payload = self::pkcs5_pad($payload, 16);
         $token = openssl_encrypt($payload, 'AES-128-CBC', $this->key, OPENSSL_RAW_DATA|OPENSSL_ZERO_PADDING, $this->iv);
         return  base64_encode($token);
@@ -43,4 +46,11 @@ class AesEncrypter implements Encrypter
         }
         return substr($decrypted, 0, -$padding);
     }
+
+    //填充
+    public function pkcs5_pad($text, $blocksize) {
+        $pad = $blocksize - (strlen($text) % $blocksize);
+        return $text . str_repeat(chr($pad), $pad);
+    }
+
 }

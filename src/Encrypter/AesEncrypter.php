@@ -48,7 +48,7 @@ class AesEncrypter implements Encrypter
     }
 
     //填充
-    public function pkcs5_pad($text, $blocksize) {
+    private function pkcs5_pad($text, $blocksize) {
         $pad = $blocksize - (strlen($text) % $blocksize);
         return $text . str_repeat(chr($pad), $pad);
     }

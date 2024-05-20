@@ -4,6 +4,10 @@ namespace Js3\ApprovalFlow;
 
 
 use GuzzleHttp\Client;
+use Illuminate\Database\Connection;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Schema\Grammars\Grammar;
+use Illuminate\Support\Fluent;
 use Illuminate\Support\ServiceProvider;
 use Js3\ApprovalFlow\Encrypter\AesEncrypter;
 use Js3\ApprovalFlow\Encrypter\Encrypter;
@@ -26,10 +30,12 @@ class ApprovalFlowServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        //合并配置文件
         $this->mergeConfigFrom(
             $this->getConfigFilePath(), 'approval-flow'
         );
 
+        //注册服务
         $this->registerProvider();
 
     }
@@ -42,13 +48,13 @@ class ApprovalFlowServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //发布配置问及那
+        //发布配置文件
         $this->publishes([
             $this->getConfigFilePath() => config_path('approval-flow.php'),
         ]);
 
         //注册路由
-        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        $this->loadRoutes();
 
         //注册数据库迁移
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
@@ -61,7 +67,11 @@ class ApprovalFlowServiceProvider extends ServiceProvider
             );
         });
 
-        $this->registerCreator();
+        //为允许数据库迁移使用comment方法
+        $this->addCommentTableMethodWhenMigration();
+
+        //注册关联应用
+        $this->registerRelateApplication();
 
     }
 
@@ -80,23 +90,82 @@ class ApprovalFlowServiceProvider extends ServiceProvider
                 $this->getConfig("aes.iv")
             );
         });
-        //用户可自定义加密类，只要实现了
+        //用户可自定义加密类，只要实现了Encrypter
         $this->app->singleton(Encrypter::class, function () {
             return $this->app->make($this->getConfig("provider.encrypter"));
         });
     }
 
+
+
+    public function loadRoutes() {
+        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+    }
+
+    /**
+     * @explain:队列迁移文件允许添加备注
+     * @author: wzm
+     * @date: 2024/5/20 9:05
+     * @remark:
+     */
+    protected function addCommentTableMethodWhenMigration() {
+        Blueprint::macro('comment', function ($comment) {
+            if (!Grammar::hasMacro('compileCommentTable')) {
+                Grammar::macro('compileCommentTable', function (Blueprint $blueprint, Fluent $command, Connection $connection) {
+                    switch ($database_driver = $connection->getDriverName()) {
+                        case 'mysql':
+                            return 'alter table ' . $this->wrapTable($blueprint) . $this->modifyComment($blueprint, $command);
+                        case 'pgsql':
+                            return sprintf(
+                                'comment on table %s is %s',
+                                $this->wrapTable($blueprint),
+                                "'" . str_replace("'", "''", $command->comment) . "'"
+                            );
+                        case 'sqlserver':
+                        case 'sqlite':
+                        default:
+                            throw new Exception("The {$database_driver} not support table comment.");
+                    }
+                });
+            }
+
+            return $this->addCommand('commentTable', compact('comment'));
+        });
+    }
+
+    /**
+     * @explain:注册关联应用生成器
+     * @author: wzm
+     * @date: 2024/5/20 9:06
+     * @remark:
+     */
+    private function registerRelateApplication() {
+        foreach ($this->getConfig("relate-application",[]) as $slug => $generator_clazz) {
+            RelateApplicationFactory::register($slug,$generator_clazz);
+        }
+    }
+
+    /**
+     * @explain: 获取配置信息
+     * @param $key
+     * @param $default
+     * @return mixed
+     * @author: wzm
+     * @date: 2024/5/20 9:22
+     * @remark:
+     */
     protected function getConfig($key, $default = null)
     {
         return config("approval-flow." . $key, $default);
     }
 
-    private function registerCreator() {
-        foreach ($this->getConfig("generator",[]) as $slug => $generator_clazz) {
-            RelateApplicationFactory::register($slug,$generator_clazz);
-        }
-    }
-
+    /**
+     * @explain:配置文件路径
+     * @return string
+     * @author: wzm
+     * @date: 2024/5/20 9:14
+     * @remark:
+     */
     private function getConfigFilePath()
     {
         return __DIR__ . '/../config/approval-flow.php';

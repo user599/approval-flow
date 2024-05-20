@@ -48,20 +48,38 @@ class HttpClient
     }
 
 
+    /**
+     * @explain: 发起get请求
+     * @param string $url
+     * @param $query
+     * @return array|mixed
+     * @throws RemoteCallErrorException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @author: wzm
+     * @date: 2024/5/20 9:24
+     * @remark:
+     */
     public function httpGet(string $url, $query = [])
     {
         return $this->doHttpRequest($url, self::HTTP_METHOD_GET, ["query" => $query]);
     }
 
+    /**
+     * @explain: 发起post请求
+     * @param string $url
+     * @param $data
+     * @return array|mixed
+     * @throws RemoteCallErrorException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @author: wzm
+     * @date: 2024/5/20 9:24
+     * @remark:
+     */
     public function httpPost(string $url, $data = [])
     {
         return $this->doHttpRequest($url, self::HTTP_METHOD_POST, ["form_params" => $data]);
     }
 
-    public function httpPostJson(string $url, array $data = [], array $query = [])
-    {
-        return $this->doHttpRequest($url, self::HTTP_METHOD_POST, ['query' => $query, 'json' => $data]);
-    }
 
     /**
      * @explain:实际请求方法
@@ -89,6 +107,7 @@ class HttpClient
     /**
      * @explain:设置身份信息
      * @param AuthInfo $authInfo
+     * @return HttpClient
      * @author: wzm
      * @date: 2024/5/17 13:57
      * @remark:
@@ -96,6 +115,7 @@ class HttpClient
     public function setAuthInfo(AuthInfo $authInfo)
     {
         $this->auth_info = $authInfo;
+        return $this;
     }
 
     /**
@@ -109,8 +129,9 @@ class HttpClient
         //1.身份验证中间件
         $this->pushMiddleware($this->authHeaderMiddleware(), 'auth-token');
 
-        //...待定其他处理
+        //2.返回值处理中间件
         $this->pushMiddleware($this->wrapperResponseMiddleware(),"wrapper-response");
+        //...待定其他处理
     }
 
     /**

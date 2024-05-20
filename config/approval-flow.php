@@ -36,7 +36,7 @@ return [
      *          options 获取下拉列表数据，返回\Js3\ApprovalFlow\Entity\SelectOptions的数组（按需设置树状结构）
      *          children 获取指定选项的所有子集 返回\Js3\ApprovalFlow\Entity\SelectOptions的数组 （一维数组即可，不需要设置属性结构）
      */
-    "generator" => [
+    "relate-application" => [
         //仅供参考，正式使用时请屏蔽
         "demo-department"=> \Js3\ApprovalFlow\Generators\DepartmentApplicationGeneratorImpl::class
     ]

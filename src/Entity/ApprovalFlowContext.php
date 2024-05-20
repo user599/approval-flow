@@ -22,12 +22,10 @@ abstract class ApprovalFlowContext
      */
     private  $approval_flow_instance;
 
-
     /**
      * @var AbstractNode 当前所处节点信息
      */
     private $current_node;
-
 
     /**
      * @var array<AbstractNode> 本次执行通过的节点
@@ -39,17 +37,17 @@ abstract class ApprovalFlowContext
      */
     private $obj_service_approval_flow_instance;
 
-    public function __construct(ApprovalFlowInstanceService $obj_service_approval_flow_instance)
+    private function __construct()
     {
-        $this->obj_service_approval_flow_instance= $obj_service_approval_flow_instance;
-
+        $this->obj_service_approval_flow_instance= new ApprovalFlowInstanceService();
     }
-
 
     public function generateContextByInstanceId($instance_id)
     {
-        $obj_instance_info = $this->obj_service_approval_flow_instance->findById($instance_id);
-        //TODO 格式化审批流实例
+        $approvalFlowContext = new static();
+        $approvalFlowContext->setApprovalFlowInstance($approvalFlowContext->obj_service_approval_flow_instance->findById($instance_id));
+        $approvalFlowContext->setCurrentNode($approvalFlowContext->getApprovalFlowInstance()->currentNode);
+        return $approvalFlowContext;
 
 
     }
@@ -79,6 +77,11 @@ abstract class ApprovalFlowContext
     {
         return $this->approval_flow_instance;
     }
+
+    public function setApprovalFlowInstance(ApprovalFlowInstance $approval_flow_instance) {
+        return $this->approval_flow_instance = $approval_flow_instance;
+    }
+
     /**
      * @return array<AbstractNode>
      */

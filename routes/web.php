@@ -7,9 +7,19 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::prefix("api/approval-flow")->group(function () {
+/**
+ * 审批流相关控制器
+ */
+Route::prefix("api/approval-flow")->middleware(["api"])->group(function () {
 
-    Route::get("application/{slug}","\Js3\ApprovalFlow\Controller\ApprovalFlowApplicationController@getApplicationInfo");
-    Route::get("application/{slug}/{id}","\Js3\ApprovalFlow\Controller\ApprovalFlowApplicationController@getApplicationChildren");
+    /**
+     * 关联应用相关
+     */
+    Route::prefix("relate-application")->group(function() {
+        Route::get("{slug}","\Js3\ApprovalFlow\Controller\ApprovalFlowRelateApplicationController@getRelateApplicationOptions");
+        Route::get("{slug}/{id}","\Js3\ApprovalFlow\Controller\ApprovalFlowRelateApplicationController@getRelateApplicationChildren");
+
+    });
+
 
 });

@@ -7,7 +7,7 @@ namespace Js3\ApprovalFlow\Generators;
 use Js3\ApprovalFlow\Entity\AuthInfo;
 
 /**
- * @explain: ${EXPLAIN}
+ * @explain: 仅用作示例
  * @author: wzm
  * @date: 2024/5/17 15:58
  */

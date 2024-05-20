@@ -1,16 +1,15 @@
 <?php
 
-namespace Handler;
+namespace Js3\ApprovalFlow\Test\Handler;
 
 use GuzzleHttp\Client;
 use Js3\ApprovalFlow\Encrypter\AesEncrypter;
 use Js3\ApprovalFlow\Entity\AuthInfo;
-use Js3\ApprovalFlow\Handler\QjApprovalFlowHandler;
 use Js3\ApprovalFlow\HttpClient\HttpClient;
 use Js3\ApprovalFlow\Utils\OutputUtils;
 use PHPUnit\Framework\TestCase;
 
-class QjApprovalFlowHandlerTest extends TestCase
+class ApprovalFlowHandlerTest extends TestCase
 {
 
     private $auth_info;
@@ -37,6 +36,7 @@ class QjApprovalFlowHandlerTest extends TestCase
     {
         parent::__construct($name, $data, $dataName);
 
+
         $client = new Client($this->config["http"]);
         $encrypter = new AesEncrypter($this->config["aes"]["key"],$this->config["aes"]["iv"]);
         $http_client = new HttpClient(
@@ -60,9 +60,7 @@ class QjApprovalFlowHandlerTest extends TestCase
 
         ];
         $res = $this->handler->generate($form_data);
-
-        OutputUtils::p($res);
-
+        OutputUtils::p($res->toArray());
     }
 
 

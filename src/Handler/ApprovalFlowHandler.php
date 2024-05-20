@@ -53,14 +53,14 @@ interface ApprovalFlowHandler
      * @date: 2024/5/17 14:45
      * @remark:
      */
-    public function reject($snapshot_id, $remark = null,$operate_time = null) : ApprovalFlowContext;
+    public function reject($node_id, $remark = null,$operate_time = null) : ApprovalFlowContext;
 
     /**
      * @explain:撤销
      * @param $remark
      * @return mixed
      */
-    public function revocation($instance_id,$remark = null,$operate_time = null) : ApprovalFlowContext;
+    public function revocation($instance_id,$remark = null,$operate_time = null) ;
 
     /**
      * @explain 获取审批实例状态

@@ -5,7 +5,6 @@ namespace Js3\ApprovalFlow\Generators;
 
 
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
-use Pion\Laravel\ChunkUpload\Handler\HandlerFactory;
 
 /**
  * @explain:
@@ -15,6 +14,9 @@ use Pion\Laravel\ChunkUpload\Handler\HandlerFactory;
 class RelateApplicationFactory
 {
 
+    /**
+     * @var array 生成器列表
+     */
     private static $generator_list = [];
 
     /**
@@ -27,7 +29,7 @@ class RelateApplicationFactory
      */
     public static function chooseGenerator(string $slug)
     {
-        $generator_clazz = self::$generator_list[strtolower($slug)]??null;
+        $generator_clazz = self::$generator_list[strtolower($slug)] ?? null;
         if (empty($generator_clazz)) {
             throw new ApprovalFlowException("未知的关联应用标识{$slug},请在配置文件配置");
         }
@@ -42,7 +44,7 @@ class RelateApplicationFactory
      * @date: 2024/5/17 16:14
      * @remark:
      */
-    public static function register($slug,  $generator_clazz)
+    public static function register($slug, $generator_clazz)
     {
         self::$generator_list[strtolower($slug)] = $generator_clazz;
     }

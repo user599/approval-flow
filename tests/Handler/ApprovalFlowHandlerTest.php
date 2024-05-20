@@ -4,8 +4,11 @@ namespace Js3\ApprovalFlow\Test\Handler;
 
 use GuzzleHttp\Client;
 use Js3\ApprovalFlow\Encrypter\AesEncrypter;
+use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
 use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\HttpClient\HttpClient;
+use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
+use Js3\ApprovalFlow\Service\ApprovalFlowInstanceService;
 use Js3\ApprovalFlow\Utils\OutputUtils;
 use PHPUnit\Framework\TestCase;
 
@@ -42,7 +45,9 @@ class ApprovalFlowHandlerTest extends TestCase
         $http_client = new HttpClient(
             $client, $encrypter
         );
-        $this->handler = new QjApprovalFlowHandler($http_client);
+
+        $approval_context = new ApprovalFlowContext(new ApprovalFlowInstanceService(new ApprovalFlowInstance()));
+        $this->handler = new QjApprovalFlowHandler(null,$approval_context,$http_client);
 
     }
 
@@ -60,7 +65,7 @@ class ApprovalFlowHandlerTest extends TestCase
 
         ];
         $res = $this->handler->generate($form_data);
-        OutputUtils::p($res->toArray());
+        OutputUtils::p($res);
     }
 
 

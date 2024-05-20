@@ -42,6 +42,6 @@ class ApprovalFlowInstance extends Model
      * @remark:
      */
     public function operators() {
-        return $this->hasMany(ApprovalFlowInstanceNodeOperator::class,"node_id");
+        return $this->hasMany(ApprovalFlowInstanceNodeOperator::class,"instance_id");
     }
 }

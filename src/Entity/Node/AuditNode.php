@@ -29,10 +29,6 @@ class AuditNode extends AbstractNode
 
     protected function canContinueExecute(ApprovalFlowContext $context)
     {
-        /**
-         * 审批节点只有当前节点的审批数据全部完成后才能继续执行
-         */
-
 
     }
 

@@ -19,8 +19,8 @@ class CreateApprovalFlowInstanceNodeTable extends Migration
             $table->unsignedBigInteger("instance_id")->comment("实例id");
             $table->string("name",50)->comment("节点名称");
             $table->string("node_type")->comment("节点类型");
-            $table->dateTime("pass_time")->nullable()->comment("节点通过时间");
             $table->text("metadata")->nullable()->comment("节点元数据，存储一些额外信息");
+            $table->dateTime("pass_time")->nullable()->comment("节点通过时间");
             $table->dateTime('created_at')->nullable();
             $table->dateTime('updated_at')->nullable();
             $table->dateTime('deleted_at')->nullable();

@@ -5,6 +5,7 @@ namespace Js3\ApprovalFlow\Handler;
 
 
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Support\Facades\Validator;
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
 use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Entity\Node\AuditNode;
@@ -23,12 +24,8 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     /**
      * @var string 审批流标识
      */
-    protected static $approval_flow_slug;
+    protected $approval_flow_slug;
 
-    /**
-     * @var ApprovalFlowContext 审批流上下文
-     */
-    protected $approval_flow_context;
     /**
      * @var AuthInfo 当前用户身份信息
      */
@@ -40,34 +37,39 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     private $http_client;
 
     /**
+     * @param AuthInfo 身份信息
+     *       使用app(ApprovalFlowContext::class) 或 App::make(ApprovalFlowContext::class)即可
      * @param HttpClient $http_client http客户端
+     *          使用app(HttpClient::class) 或 App::make(HttpClient::class)即可
      */
-    public function __construct(AuthInfo $auth_info)
+    public function __construct(?AuthInfo $auth_info, HttpClient $http_client)
     {
         $this->auth_info = $auth_info;
-        $this->http_client = app(HttpClient::class)->setAuthInfo($auth_info);
+        $this->http_client = $http_client;
+
     }
 
     /**
-     * @explain: 生成审批流
+     * @explain: 创建审批流
      * @param $form_data
-     * @return ApprovalFlowInstance
+     * @return ApprovalFlowContext
      * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Js3\ApprovalFlow\Exceptions\ApprovalFlowException
      * @throws \Js3\ApprovalFlow\Exceptions\RemoteCallErrorException
      * @author: wzm
-     * @date: 2024/5/20 9:41
+     * @date: 2024/5/20 17:03
      * @remark:
      */
     public function generate($form_data = [])
     {
-        $data =[
+        $data = [
             "form_data" => $form_data,
-            "slug" => static::$approval_flow_slug,
+            "slug" => $this->approval_flow_slug,
         ];
-        $res = $this->http_client->httpPost("/api/approval-flow/generate",$data);
-        //格式化返回的数据
-        //TODO 将生成的结构存储到数据库中
-        return new ApprovalFlowInstance($res);
+        $res = $this->http_client
+            ->setAuthInfo($this->auth_info)
+            ->httpPost("/api/approval-flow/generate", $data);
+        return ApprovalFlowContext::storeApprovalFlowInstance($res, $this->auth_info);
     }
 
     /**
@@ -81,7 +83,19 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      */
     public function execute($instance_id, $args): ApprovalFlowContext
     {
-        // TODO: Implement execute() method.
+        $approvalFlowContext = ApprovalFlowContext::getContextByInstanceId($instance_id);
+        $approvalFlowContext->setArgs($args);
+        $approvalFlowContext->getStart()->execute($approvalFlowContext);
+
+        foreach ($approvalFlowContext->getExecutedNodes() as $executedNode) {
+            if ($executedNode instanceof AuditNode) {
+                $this->handleAuditExtraOperate($executedNode);
+            } elseif ($executedNode instanceof CarbonCopyNode) {
+                $this->handleCarbonCopy($executedNode);
+            }
+        }
+
+        return $approvalFlowContext;
 
     }
 
@@ -171,39 +185,11 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      * @date: 2024/5/20 9:42
      * @remark:
      */
-    public static function getApprovalFlowSlug(): string
+    public function getApprovalFlowSlug(): string
     {
-        return static::$approval_flow_slug;
+        return $this->approval_flow_slug;
     }
 
-    /**
-     * @return HttpClient
-     */
-    public function getHttpClient(): HttpClient
-    {
-        return $this->http_client;
-    }
-
-    /**
-     * @param HttpClient $http_client
-     */
-    public function setHttpClient(HttpClient $http_client): void
-    {
-        $this->http_client = $http_client;
-    }
-
-    /**
-     * @explain: 设置用户身份信息
-     * @param AuthInfo $auth_info
-     * @return $this
-     * @author: wzm
-     * @date: 2024/5/17 15:06
-     * @remark: TODO 想想别的更好的解决方法，这个样子需要每次调用上述审批方法时必须先指定用户身份
-     */
-    public function getAuthInfo()
-    {
-        return $this->auth_info;
-    }
 
     /**
      * @explain: 设置用户身份信息
@@ -216,7 +202,6 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     public function setAuthInfo(AuthInfo $auth_info)
     {
         $this->auth_info = $auth_info;
-        $this->http_client->setAuthInfo($auth_info);
         return $this;
     }
 

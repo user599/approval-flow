@@ -4,9 +4,12 @@
 namespace Js3\ApprovalFlow\Entity\Node;
 
 
+use Illuminate\Database\Eloquent\Model;
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
+use Js3\ApprovalFlow\Entity\Interceptor\LogInterceptor;
+use Js3\ApprovalFlow\Entity\Interceptor\NodeInterceptor;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
-use Js3\ApprovalFlow\Interceptor\NodeInterceptor;
+use Js3\ApprovalFlow\Model\ApprovalFlowNode;
 
 
 /**
@@ -18,20 +21,14 @@ abstract class AbstractNode
 {
 
     /**
-     * @var AbstractNode|null 前置节点
+     * @var string 节点名称
      */
-    protected  $pre_node;
+    protected $name;
 
     /**
-     * @var AbstractNode|null 后置节点
+     * @var ApprovalFlowNode 雄辩模型
      */
-    protected $next_node;
-
-
-    /**
-     * @var 当前节点标识
-     */
-    protected $slug;
+    protected $model;
 
 
     /**
@@ -43,6 +40,18 @@ abstract class AbstractNode
      * @var array 当前节点后置拦截器
      */
     private $post_interceptor_list = [];
+
+
+
+    /**
+     * @var AbstractNode|null 前置节点
+     */
+    protected  $pre_node;
+
+    /**
+     * @var AbstractNode|null 后置节点
+     */
+    protected $next_node;
 
     /**
      * @param AbstractNode $pre_node
@@ -152,12 +161,78 @@ abstract class AbstractNode
     }
 
     /**
-     * @return
+     * @return string
      */
-    public function getSlug(): string
+    public function getName(): string
     {
-        return $this->slug;
+        return $this->name;
     }
+
+    /**
+     * @param string $name
+     * @return AbstractNode
+     */
+    public function setName(string $name): AbstractNode
+    {
+        $this->name = $name;
+        return $this;
+    }
+
+    /**
+     * @return Model
+     */
+    public function getModel(): Model
+    {
+        return $this->model;
+    }
+
+    /**
+     * @param Model $model
+     * @return AbstractNode
+     */
+    public function setModel(Model $model): AbstractNode
+    {
+        $this->model = $model;
+        return $this;
+    }
+
+    /**
+     * @return AbstractNode|null
+     */
+    public function getPreNode(): ?AbstractNode
+    {
+        return $this->pre_node;
+    }
+
+    /**
+     * @param AbstractNode|null $pre_node
+     * @return AbstractNode
+     */
+    public function setPreNode(?AbstractNode $pre_node): AbstractNode
+    {
+        $this->pre_node = $pre_node;
+        return $this;
+    }
+
+    /**
+     * @return AbstractNode|null
+     */
+    public function getNextNode(): ?AbstractNode
+    {
+        return $this->next_node;
+    }
+
+    /**
+     * @param AbstractNode|null $next_node
+     * @return AbstractNode
+     */
+    public function setNextNode(?AbstractNode $next_node): AbstractNode
+    {
+        $this->next_node = $next_node;
+        return $this;
+    }
+
+
 
 
 

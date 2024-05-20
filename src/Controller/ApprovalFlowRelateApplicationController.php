@@ -46,7 +46,7 @@ class ApprovalFlowRelateApplicationController extends Controller
                 }
             } else {
                 $auth_info = $encrypter->decrypt($str_token);
-                $this->auth_info = new AuthInfo($auth_data['auth_data'], $auth_data['auth_type']);
+                $this->auth_info = new AuthInfo($auth_info['auth_data'], $auth_info['auth_type']);
             }
         } catch (\Exception $e) {
             throw new ApprovalFlowException("验证身份信息失败", 500, $e);

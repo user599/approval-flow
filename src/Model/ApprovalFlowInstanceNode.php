@@ -18,6 +18,10 @@ class ApprovalFlowInstanceNode extends Model
     protected $table = 'approval_flow_instance_node';
     protected $guarded = [];
 
+    const NODE_TYPE_APPLY = 1;
+    const NODE_TYPE_AUDIT = 2;
+    const NODE_TYPE_CARBON_COPY = 3;
+
     /**
      * @explain:所属实例
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo

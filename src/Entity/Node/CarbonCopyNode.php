@@ -4,8 +4,9 @@
 namespace Js3\ApprovalFlow\Entity\Node;
 
 
-
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
+use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
+use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeOperator;
 
 /**
  * @explain:抄送节点
@@ -14,11 +15,6 @@ use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
  */
 class CarbonCopyNode extends AbstractNode
 {
-
-
-
-
-
 
     /**
      * @explain:抄送节点直接接后续节点即可
@@ -29,7 +25,15 @@ class CarbonCopyNode extends AbstractNode
      */
     function doExecute(ApprovalFlowContext $context)
     {
-        //记录抄送信息
-
+        //抄送节点直接通过
+        $bool_is_operator = false;
+        foreach ($this->model->operators as $operator) {
+            $bool_is_operator = true;
+            $operator->operator_status = ApprovalFlowInstanceNodeOperator::OPERATOR_STATUS_PASS;
+            $operator->operate_time = date('Y-m-d H:i:s');
+            $operator->payload = json_encode($context->getArgs());
+            $operator->save();
+        }
+        throw_if(!$bool_is_operator, ApprovalFlowException::class, "当前操作人");
     }
 }

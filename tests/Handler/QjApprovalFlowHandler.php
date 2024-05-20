@@ -17,16 +17,11 @@ use Js3\ApprovalFlow\HttpClient\HttpClient;
  */
 class QjApprovalFlowHandler extends AbstractApprovalFlowHandler
 {
-    public function __construct(AuthInfo $authInfo)
-    {
-        $this->auth_info = $authInfo;
-    }
-
 
     /**
      * @var string 审批流标识
      */
-    protected static $approval_flow_slug = 'qj';
+    protected $approval_flow_slug = 'qj';
 
 
     /**

@@ -70,6 +70,7 @@ class ApprovalFlowInstanceService
             "revocation_type" => $ary_data["revocation_type"],
             "creator_id" => $auth_info->getAuthId(),
             "creator_time" => date('Y-m-d H:i:s'),
+            "status" => ApprovalFlowInstance::STATUS_NOT_START,
         ];
         $obj_instance = $this->obj_model_instance->newQuery()->create($ary_insert_data);
         $this->obj_service_instance_node->createNode($ary_data["node"],$obj_instance->id);

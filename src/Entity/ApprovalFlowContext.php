@@ -101,8 +101,9 @@ class ApprovalFlowContext
         $approvalFlowContext = new self();
         $approvalFlowContext->setApprovalFlowInstance($obj_instance);
         $approvalFlowContext->setAuthInfo($auth_info);
-        foreach ($obj_instance->nodes as $model_node) {
-            $parse_clazz = NodeParseable::NODE_PARSER_MAP[$model_node->type];
+        foreach ($obj_instance->nodes as $model_node)
+        {
+            $parse_clazz = NodeParseable::NODE_PARSER_MAP[$model_node->type]??null;
             if (empty($parse_clazz)) {
                 throw new ApprovalFlowException("未配置该类型节点的解析器:{$model_node->type}");
             }
@@ -130,10 +131,16 @@ class ApprovalFlowContext
             }
         }
         return $approvalFlowContext;
-
     }
 
-    public function getStart()
+    /**
+     * @explain: 获取开始节点
+     * @return AbstractNode
+     * @author: wzm
+     * @date: 2024/5/21 14:07
+     * @remark:
+     */
+    public function getStartNode()
     {
         return $this->node_list[0];
     }
@@ -182,17 +189,7 @@ class ApprovalFlowContext
      */
     public function setExecutedNode(AbstractNode $node): ApprovalFlowContext
     {
-        //去重
-        $node_in_executed = false;
-        foreach ($this->executed_nodes as $executed_node) {
-            if ($executed_node->getSlug() == $this->current_node->getSlug()) {
-                $node_in_executed = true;
-                break;
-            }
-        }
-        if ($node_in_executed) {
-            $this->executed_nodes[] = $node;
-        }
+        $this->executed_nodes[] = $node;
         return $this;
     }
 

@@ -29,10 +29,11 @@ interface ApprovalFlowHandler
      * @date: 2024/5/17 14:45
      * @remark:
      */
-    public function execute($instance_id,$args) : ApprovalFlowContext;
+    public function execute($instance_id, $args): ApprovalFlowContext;
 
     /**
      * @explain: 通过
+     * @param $instance_id
      * @param $node_id
      * @param $remark
      * @param $operate_time
@@ -41,10 +42,11 @@ interface ApprovalFlowHandler
      * @date: 2024/5/17 14:45
      * @remark:
      */
-    public function auditPass($node_id, $remark = null,$operate_time = null) : ApprovalFlowContext;
+    public function auditPass($instance_id, $node_id, $remark = null, $operate_time = null): ApprovalFlowContext;
 
     /**
      * @explain: 拒绝
+     * @param $instance_id
      * @param $node_id
      * @param $remark
      * @param $operate_time
@@ -53,14 +55,14 @@ interface ApprovalFlowHandler
      * @date: 2024/5/17 14:45
      * @remark:
      */
-    public function reject($node_id, $remark = null,$operate_time = null) : ApprovalFlowContext;
+    public function reject($instance_id, $node_id, $remark = null, $operate_time = null): ApprovalFlowContext;
 
     /**
      * @explain:撤销
      * @param $remark
      * @return mixed
      */
-    public function revocation($instance_id,$remark = null,$operate_time = null) ;
+    public function revocation($instance_id, $remark = null, $operate_time = null);
 
     /**
      * @explain 获取审批实例状态

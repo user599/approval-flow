@@ -35,7 +35,7 @@ class QjApprovalFlowHandler extends AbstractApprovalFlowHandler
     /**
      * @inheritDoc
      */
-    function handleCarbonCopy(CarbonCopyNode $node)
+    function handleCarbonCopyExtraOperate(CarbonCopyNode $node)
     {
         dd(222);
     }

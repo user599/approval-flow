@@ -55,7 +55,7 @@ class ApprovalFlowInstanceNodeOperatorService
                 "instance_id" => $instance_id,
                 "operator_id" => $operator_data["operator_id"],
                 "operator_type" => $operator_data["operator_type"],
-                "operate_status"=> ApprovalFlowInstanceNodeOperator::OPERATOR_STATUS_UN_OPERATE
+                "status"=> ApprovalFlowInstanceNodeOperator::STATUS_UN_OPERATE
             ];
             $this->obj_model_operator->newQuery()->create($ary_insert_operator_data);
         }

@@ -26,14 +26,11 @@ class CarbonCopyNode extends AbstractNode
     function doExecute(ApprovalFlowContext $context)
     {
         //抄送节点直接通过
-        $bool_is_operator = false;
         foreach ($this->model->operators as $operator) {
-            $bool_is_operator = true;
-            $operator->operator_status = ApprovalFlowInstanceNodeOperator::OPERATOR_STATUS_PASS;
+            $operator->status = ApprovalFlowInstanceNodeOperator::STATUS_PASS;
             $operator->operate_time = date('Y-m-d H:i:s');
             $operator->payload = json_encode($context->getArgs());
             $operator->save();
         }
-        throw_if(!$bool_is_operator, ApprovalFlowException::class, "当前操作人");
     }
 }

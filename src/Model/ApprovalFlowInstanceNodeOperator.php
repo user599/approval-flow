@@ -19,9 +19,9 @@ class ApprovalFlowInstanceNodeOperator extends Model
     protected $table = 'approval_flow_instance_node_operator';
     protected $guarded = [];
 
-    const OPERATOR_STATUS_UN_OPERATE = 0;
-    const OPERATOR_STATUS_PASS = 1;
-    const OPERATOR_STATUS_REFUSE = 2;
+    const STATUS_UN_OPERATE = 0;
+    const STATUS_PASS = 1;
+    const STATUS_REFUSE = 2;
     /**
      * @explain: 所属实例
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo

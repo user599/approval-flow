@@ -18,6 +18,16 @@ class ApprovalFlowInstance extends Model
     protected $table = 'approval_flow_instance';
     protected $guarded = [];
 
+    /**
+     * 实例状态：1：未开始，2：进行中，3：已完成，4：撤销
+     */
+    const STATUS_NOT_START = 1;
+    const STATUS_RUNNING = 2;
+    const STATUS_FINISH = 3;
+    const STATUS_REVOCATION = 4;
+
+
+
 
     /**
      * @explain:节点信息

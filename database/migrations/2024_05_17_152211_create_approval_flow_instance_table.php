@@ -19,9 +19,10 @@ class CreateApprovalFlowInstanceTable extends Migration
             $table->bigInteger("current_node_id")->comment("当前节点id");
             $table->tinyInteger("can_revocation")->default(0)->comment("是否允许撤回【0否 1是】");
             $table->tinyInteger("revocation_type")->comment("撤回类型【1 未进入流程时撤回 2 流程中撤回 3流程结束后撤回");
+            $table->tinyInteger("status")->default(\Js3\ApprovalFlow\Model\ApprovalFlowInstance::STATUS_NOT_START);
             $table->string("creator_id")->nullable()->comment("创建人");
             $table->string("creator_type")->nullable()->comment("创建人类型");
-            $table->dateTime("finish_time")->comment("完成时间");
+            $table->dateTime("finish_time")->nullable()->comment("完成时间");
             $table->dateTime('created_at')->nullable();
             $table->dateTime('updated_at')->nullable();
             $table->dateTime('deleted_at')->nullable();

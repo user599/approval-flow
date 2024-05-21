@@ -13,15 +13,14 @@ class CreateApprovalFlowInstanceNodeOperatorTable extends Migration
      */
     public function up()
     {
-        Schema::create('approval_instance_flow_node_operator', function (Blueprint $table) {
+        Schema::create('approval_flow_instance_node_operator', function (Blueprint $table) {
             $table->bigIncrements("id");
             $table->unsignedBigInteger("node_id")->comment("所属节点id");
             $table->unsignedBigInteger("instance_id")->comment("实例id");
             $table->unsignedBigInteger("operator_id")->comment("操作人id");
             $table->string("operator_type")->comment("操作人类型");
-            $table->tinyInteger("operate_status")->nullable()->comment("操作状态：[0 未操作 1通过 2拒绝]");
+            $table->tinyInteger("operate_status")->default(\Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeOperator::STATUS_UN_OPERATE)->comment("操作状态【0未操作 1通过 2拒绝】");
             $table->dateTime("operate_time")->nullable()->comment("操作时间");
-            $table->text("payload")->nullable()->comment("额外信息");
             $table->dateTime('created_at')->nullable();
             $table->dateTime('updated_at')->nullable();
             $table->dateTime('deleted_at')->nullable();

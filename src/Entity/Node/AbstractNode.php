@@ -5,14 +5,10 @@ namespace Js3\ApprovalFlow\Entity\Node;
 
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Arr;
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
-use Js3\ApprovalFlow\Entity\Interceptor\LogInterceptor;
-use Js3\ApprovalFlow\Entity\Interceptor\NodeInterceptor;
-use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
-use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
-use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeOperator;
-use Js3\ApprovalFlow\Model\ApprovalFlowNode;
+use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
+use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeRelatedMemberService;
+use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeService;
 
 
 /**
@@ -24,32 +20,19 @@ abstract class AbstractNode
 {
 
     /**
+     * @var int 数据库中的主键
+     */
+    protected $id;
+
+    /**
      * @var string 节点名称
      */
     protected $name;
 
     /**
-     * @var ApprovalFlowNode 雄辩模型
+     * @var ApprovalFlowInstanceNode 雄辩模型
      */
     protected $model;
-
-    /**
-     * @var array 静态拦截器
-     */
-    private static $static_pre_interceptor_list = [];
-    private static $static_post_interceptor_list = [];
-
-
-    /**
-     * @var string[] 当前节点前置拦截器
-     */
-    private $pre_interceptor_list = [LogInterceptor::class];
-
-    /**
-     * @var array 当前节点后置拦截器
-     */
-    private $post_interceptor_list = [];
-
 
     /**
      * @var AbstractNode|null 前置节点
@@ -63,20 +46,23 @@ abstract class AbstractNode
 
 
     /**
-     * @var array<ApprovalFlowInstanceNodeOperator> 当前节点操作人
+     * @var ApprovalFlowInstanceNodeService
      */
-    protected $operator = [];
+    protected $obj_service_af_node;
 
     /**
-     * @param AbstractNode $pre_node
-     * @param AbstractNode $next_node
-     * @param array $pre_interceptor_list
-     * @param array $post_interceptor_list
+     * @var ApprovalFlowInstanceNodeRelatedMemberService
      */
-    public function __construct(AbstractNode $pre_node = null, AbstractNode $next_node = null)
+    protected $obj_service_af_related_member;
+
+    /**
+     * @param ApprovalFlowInstanceNodeService $obj_service_af_node
+     * @param ApprovalFlowInstanceNodeRelatedMemberService $obj_service_af_related_member
+     */
+    public function __construct(ApprovalFlowInstanceNodeService $obj_service_af_node, ApprovalFlowInstanceNodeRelatedMemberService $obj_service_af_related_member)
     {
-        $this->pre_node = $pre_node;
-        $this->next_node = $next_node;
+        $this->obj_service_af_node = $obj_service_af_node;
+        $this->obj_service_af_related_member = $obj_service_af_related_member;
     }
 
 
@@ -92,41 +78,20 @@ abstract class AbstractNode
         //设置当前节点
         $context->setCurrentNode($this);
 
-        //前置拦截器
-        $this->intercept(static::$static_pre_interceptor_list, $context);
-        $this->intercept($this->pre_interceptor_list, $context);
-
         //各个节点重写的执行方法
         $this->doExecute($context);
 
-        /**
-         * 当可以执行下一节点时触发后置拦截器并继续执行
-         */
+        //是否可继续执行
         if ($this->canContinueExecute($context)) {
             //记录当前节点为已执行节点
             $context->setExecutedNode($this);
 
-            //当前节点通过时间
-            $this->model->pass_time = date('Y-m-d H:i:s');
-
-            //后置拦截器
-            $this->intercept($this->pre_interceptor_list, $context);
-            $this->intercept(static::$static_post_interceptor_list, $context);
-
             //若还有下个节点则继续执行
             if (!empty($this->next_node)) {
                 $this->next_node->execute($context);
-            } else {
-                //否则说明结束了
-                $context->getApprovalFlowInstance()->update(
-                    [
-                        "status" => ApprovalFlowInstance::STATUS_FINISH,
-                        "finish_time" => date('Y-m-d H:i:s')
-                    ]
-                );
             }
         }
-        $this->model->save();
+
     }
 
     /**
@@ -152,87 +117,24 @@ abstract class AbstractNode
         return true;
     }
 
+
+    //region getter // setter
     /**
-     * @explain:执行拦截器
-     * @param array $interceptor_list
-     * @param ApprovalFlowContext $context
-     * @author: wzm
-     * @date: 2024/5/14 17:59
-     * @remark:
+     * @return int
      */
-    protected function intercept(array $interceptor_list, ApprovalFlowContext $context)
+    public function getId(): int
     {
-        foreach ($interceptor_list as $interceptor) {
-            //1.拦截器是回调函数
-            if (is_callable($interceptor)) {
-                $interceptor($context);
-            } else {
-                //拦截器是限定类名，且该类存在
-                $interceptor_clazz = str_replace('/', '\\', !empty($interceptor) ? $interceptor : '');
-                if (class_exists($interceptor_clazz)) {
-                    (new $interceptor_clazz)->intercept($context);
-                } else {
-                    throw new ApprovalFlowException("未知的拦截器信息:{$interceptor}");
-                }
-            }
-        }
+        return $this->id;
     }
 
     /**
-     * @return array
+     * @param int $id
+     * @return AbstractNode
      */
-    public static function getStaticPreInterceptorList(): array
+    public function setId($id): AbstractNode
     {
-        return self::$static_pre_interceptor_list;
-    }
-
-    /**
-     * @param array $static_pre_interceptor_list
-     */
-    public static function setStaticPreInterceptorList(array $static_pre_interceptor_list): void
-    {
-        self::$static_pre_interceptor_list = $static_pre_interceptor_list;
-    }
-
-    /**
-     * @return array
-     */
-    public static function getStaticPostInterceptorList(): array
-    {
-        return self::$static_post_interceptor_list;
-    }
-
-    /**
-     * @param array $static_post_interceptor_list
-     */
-    public static function setStaticPostInterceptorList(array $static_post_interceptor_list): void
-    {
-        self::$static_post_interceptor_list = $static_post_interceptor_list;
-    }
-
-
-    /**
-     * @explain:设置前置拦截器
-     * @param callable|NodeInterceptor $interceptor
-     * @author: wzm
-     * @date: 2024/5/14 18:00
-     * @remark:
-     */
-    public function setPreInterceptor($interceptor)
-    {
-        $this->pre_interceptor_list[] = $interceptor;
-    }
-
-    /**
-     * @explain:设置后置拦截器
-     * @param callable|NodeInterceptor $interceptor
-     * @author: wzm
-     * @date: 2024/5/14 18:00
-     * @remark:
-     */
-    public function setPostInterceptor($interceptor)
-    {
-        $this->post_interceptor_list[] = $interceptor;
+        $this->id = $id;
+        return $this;
     }
 
     /**
@@ -251,14 +153,6 @@ abstract class AbstractNode
     {
         $this->name = $name;
         return $this;
-    }
-
-    /**
-     * @return Model
-     */
-    public function getModel(): Model
-    {
-        return $this->model;
     }
 
     /**
@@ -306,25 +200,7 @@ abstract class AbstractNode
         $this->next_node = $next_node;
         return $this;
     }
-
-    /**
-     * @return ApprovalFlowInstanceNodeOperator[]
-     */
-    public function getOperator(): array
-    {
-        return $this->operator;
-    }
-
-    /**
-     * @param ApprovalFlowInstanceNodeOperator[] $operator
-     * @return AbstractNode
-     */
-    public function setOperator($operator): AbstractNode
-    {
-
-        $this->operator = is_array($operator) ? $operator : [$operator];
-        return $this;
-    }
+    //endregion
 
 
 }

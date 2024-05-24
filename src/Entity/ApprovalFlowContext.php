@@ -50,6 +50,20 @@ class ApprovalFlowContext
     private $auth_info;
 
     /**
+     * @var ApprovalFlowInstanceService
+     */
+    private $obj_service_af_instance;
+
+    /**
+     * @param ApprovalFlowInstanceService $obj_service_af_instance
+     */
+    public function __construct(ApprovalFlowInstanceService $obj_service_af_instance)
+    {
+        $this->obj_service_af_instance = $obj_service_af_instance;
+    }
+
+
+    /**
      * @explain: 存储审批流信息
      * @param array $approval_data
      * @param AuthInfo|null $auth_info
@@ -59,12 +73,10 @@ class ApprovalFlowContext
      * @date: 2024/5/20 17:02
      * @remark:
      */
-    public static function storeApprovalFlowInstance(array $approval_data, ?AuthInfo $auth_info)
+    public function storeApprovalFlowInstance(array $approval_data)
     {
-        /** @var ApprovalFlowInstanceService $obj_service_instance */
-        $obj_service_instance = app(ApprovalFlowInstanceService::class);
-        $obj_instance = $obj_service_instance->saveInstance($approval_data, $auth_info);
-        return self::getContextByInstance($obj_instance, $auth_info);
+        $obj_instance = $this->obj_service_af_instance->saveInstance($approval_data);
+        return $this->getContextByInstance($obj_instance);
     }
 
     /**
@@ -77,11 +89,9 @@ class ApprovalFlowContext
      * @date: 2024/5/20 17:02
      * @remark:
      */
-    public static function getContextByInstanceId($int_instance_id, ?AuthInfo $auth_info)
+    public function getContextByInstanceId($int_instance_id)
     {
-        /** @var ApprovalFlowInstanceService $obj_service_instance */
-        $obj_service_instance = app(ApprovalFlowInstanceService::class);
-        return self::getContextByInstance($obj_service_instance->findById($int_instance_id), $auth_info);
+        return self::getContextByInstance($this->obj_service_af_instance->findById($int_instance_id));
     }
 
 
@@ -95,42 +105,44 @@ class ApprovalFlowContext
      * @date: 2024/5/20 17:02
      * @remark:
      */
-    public static function getContextByInstance(ApprovalFlowInstance $obj_instance, ?AuthInfo $auth_info)
+    public function getContextByInstance(ApprovalFlowInstance $obj_instance)
     {
         $obj_instance = $obj_instance->load(["nodes", "nodes.operators"]);
-        $approvalFlowContext = new self();
-        $approvalFlowContext->setApprovalFlowInstance($obj_instance);
-        $approvalFlowContext->setAuthInfo($auth_info);
-        foreach ($obj_instance->nodes as $model_node)
-        {
-            $parse_clazz = NodeParseable::NODE_PARSER_MAP[$model_node->type]??null;
+        $this->setApprovalFlowInstance($obj_instance);
+        foreach ($obj_instance->nodes as $model_node) {
+            $parse_clazz = NodeParseable::NODE_PARSER_MAP[$model_node->type] ?? null;
             if (empty($parse_clazz)) {
                 throw new ApprovalFlowException("未配置该类型节点的解析器:{$model_node->type}");
             }
             /** @var NodeParseable $parse_clazz */
-            $parser = (new $parse_clazz());
+            try {
+                $parser = app($parse_clazz);
+            } catch (\Exception $e) {
+                throw new ApprovalFlowException("解析器实例化失败:{$parse_clazz}-{$e->getMessage()}");
+            }
             $parser->parseModelToNode($model_node);
             $node = $parser->getNode();
-            $approvalFlowContext->node_list[] = $node;
+            $this->node_list[] = $node;
         }
 
-        //将节点串成链表
-        foreach ($approvalFlowContext->node_list as $node) {
+        /**
+         * 构建节点关系
+         */
+        //O(2n)降低复杂度
+        $ary_node_key_by_parent_id = array_column($this->node_list, null, 'parent_id');
+        foreach ($this->node_list as $node) {
+            $curr_node_id = $node->getId();
             //设置当前节点
-            if ($node->getModel()->getKey() == $obj_instance->current_node_id) {
-                $approvalFlowContext->current_node = $node;
+            if ($curr_node_id == $obj_instance->current_node_id) {
+                $this->current_node = $node;
             }
-            foreach ($approvalFlowContext->node_list as $next_node) {
-                if ($node->getModel()->getKey() == $next_node->getModel()->getKey()) {
-                    continue;
-                }
-                if ($node->getModel()->getKey() == $next_node->getModel()->parent_id) {
-                    $node->setNextNode($next_node);
-                    $next_node->setPreNode($node);
-                }
+            $children_node = $ary_node_key_by_parent_id[$curr_node_id] ?? null;
+            if (!empty($children_node)) {
+                $node->setNextNode($children_node);
+                $children_node->setPreNode($node);
             }
         }
-        return $approvalFlowContext;
+        return $this;
     }
 
     /**
@@ -140,7 +152,7 @@ class ApprovalFlowContext
      * @date: 2024/5/21 14:07
      * @remark:
      */
-    public function getStartNode()
+    public function getStartNode() : AbstractNode
     {
         return $this->node_list[0];
     }

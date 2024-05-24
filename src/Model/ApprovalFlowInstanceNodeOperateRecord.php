@@ -12,16 +12,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @author: wzm
  * @date: 2024/5/16 17:54
  */
-class ApprovalFlowInstanceNodeOperator extends Model
+class ApprovalFlowInstanceNodeOperateRecord extends AbstractApprovalFlowBaseModel
 {
-    use SoftDeletes;
 
-    protected $table = 'approval_flow_instance_node_operator';
+    protected $table = 'approval_flow_instance_node_operate_record';
     protected $guarded = [];
 
     const STATUS_UN_OPERATE = 0;
     const STATUS_PASS = 1;
     const STATUS_REFUSE = 2;
+
     /**
      * @explain: 所属实例
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -43,6 +43,11 @@ class ApprovalFlowInstanceNodeOperator extends Model
      */
     public function node()
     {
-        return $this->belongsTo(ApprovalFlowInstanceNode::class, "instance_id");
+        return $this->belongsTo(ApprovalFlowInstanceNode::class, "node_id");
+    }
+
+    public function relatedMember()
+    {
+        return $this->belongsTo(ApprovalFlowInstanceNodeRelatedMember::class, "related_member_id");
     }
 }

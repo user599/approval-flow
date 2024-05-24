@@ -19,7 +19,6 @@ return [
         "key" => env("APPROVAL_FLOW_AES_KEY"),
         "iv" => env("APPROVAL_FLOW_AES_IV"),
     ],
-
     /**
      * 额外提供服务方法，可自行替换
      */

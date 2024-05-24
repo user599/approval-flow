@@ -7,6 +7,7 @@ namespace Js3\ApprovalFlow\Parser\impl;
 use Illuminate\Database\Eloquent\Model;
 use Js3\ApprovalFlow\Entity\Node\AbstractNode;
 use Js3\ApprovalFlow\Entity\Node\ApplyNode;
+use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 use Js3\ApprovalFlow\Parser\AbstractNodeParser;
 
 /**
@@ -21,4 +22,11 @@ class ApplyNodeParser extends AbstractNodeParser
     {
         return new ApplyNode();
     }
+
+    protected function parseExtra(AbstractNode $node, Model $model)
+    {
+        $node->setApplicant($model->relatedMembers->first()??null);
+    }
+
+
 }

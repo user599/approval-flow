@@ -38,7 +38,7 @@ class ApprovalFlowRelateApplicationController extends Controller
         try {
             $str_token = $request->header("token");
             if (empty($str_token)) {
-                //调试用
+                //TODO 调试用
                 if (!$request->exists("debug")) {
                     throw new ApprovalFlowException("未知的身份信息");
                 } else {

@@ -2,6 +2,8 @@
 
 namespace Js3\ApprovalFlow\Encrypter;
 
+use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
+
 /**
  * @explain:默认加密，解密类
  * @author: wzm
@@ -22,6 +24,8 @@ class AesEncrypter implements Encrypter
     {
         $this->key = $key;
         $this->iv = $iv;
+
+        throw_if(!($key && $iv),ApprovalFlowException::class,"未设置加密参数");
     }
 
 

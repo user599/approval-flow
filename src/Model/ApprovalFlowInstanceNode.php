@@ -12,15 +12,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @author: wzm
  * @date: 2024/5/16 17:54
  */
-class ApprovalFlowInstanceNode extends Model
+class ApprovalFlowInstanceNode extends AbstractApprovalFlowBaseModel
 {
-    use SoftDeletes;
     protected $table = 'approval_flow_instance_node';
     protected $guarded = [];
 
     const NODE_TYPE_APPLY = 1;
-    const NODE_TYPE_AUDIT = 2;
     const NODE_TYPE_CARBON_COPY = 3;
+    const NODE_TYPE_AUDIT = 4;
+    const NODE_TYPE_END=5;
 
     /**
      * @explain:所属实例
@@ -41,8 +41,13 @@ class ApprovalFlowInstanceNode extends Model
      * @date: 2024/5/20 9:30
      * @remark:
      */
-    public function operators() {
-        return $this->hasMany(ApprovalFlowInstanceNodeOperator::class,"node_id");
+    public function relatedMembers() {
+        return $this->hasMany(ApprovalFlowInstanceNodeRelatedMember::class,"node_id");
+    }
+
+
+    public function operateRecords() {
+        return $this->hasMany(ApprovalFlowInstanceOperateRecord::class,"node_id");
     }
 
 

@@ -10,6 +10,7 @@ use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
 use Js3\ApprovalFlow\Parser\impl\ApplyNodeParser;
 use Js3\ApprovalFlow\Parser\impl\AuditNodeParser;
 use Js3\ApprovalFlow\Parser\impl\CarbonCopyNodeParser;
+use Js3\ApprovalFlow\Parser\impl\EndNodeParser;
 
 /**
  * @explain:
@@ -19,10 +20,13 @@ use Js3\ApprovalFlow\Parser\impl\CarbonCopyNodeParser;
 interface NodeParseable
 {
 
+    /**
+     * 审批节点映射
+     */
     const NODE_PARSER_MAP = [
         ApprovalFlowInstanceNode::NODE_TYPE_APPLY => ApplyNodeParser::class,
         ApprovalFlowInstanceNode::NODE_TYPE_AUDIT => AuditNodeParser::class,
-        ApprovalFlowInstanceNode::NODE_TYPE_CARBON_COPY => CarbonCopyNodeParser::class
+        ApprovalFlowInstanceNode::NODE_TYPE_CARBON_COPY => CarbonCopyNodeParser::class,
     ];
 
     /**

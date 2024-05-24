@@ -91,6 +91,19 @@ class AuthInfo
         ];
     }
 
+    /**
+     * @explain: 是否同一用户
+     * @param $auth_id
+     * @param $auth_type
+     * @return bool
+     * @author: wzm
+     * @date: 2024/5/23 17:21
+     * @remark:
+     */
+    public function isSameMember($auth_id,$auth_type):bool {
+        return $auth_id == $this->getAuthId() && $auth_type == $this->getAuthType();
+    }
+
 
 
 }

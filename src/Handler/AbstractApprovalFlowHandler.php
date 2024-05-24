@@ -9,8 +9,11 @@ use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
 use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Entity\Node\AuditNode;
 use Js3\ApprovalFlow\Entity\Node\CarbonCopyNode;
+use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 use Js3\ApprovalFlow\HttpClient\HttpClient;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
+use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeRelatedMemberService;
+use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeService;
 
 /**
  * @explain:抄送审批流处理
@@ -36,6 +39,21 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     private $http_client;
 
     /**
+     * @var ApprovalFlowInstanceNodeService
+     */
+    private $obj_service_af_node;
+
+    /**
+     * @var ApprovalFlowInstanceNodeRelatedMemberService
+     */
+    private $obj_service_af_related_member;
+
+    /**
+     * @var ApprovalFlowContext
+     */
+    private $obj_approval_context;
+
+    /**
      * @param AuthInfo 身份信息，需要用户自行填入
      *
      * @param HttpClient $http_client http客户端
@@ -45,6 +63,9 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     {
         $this->auth_info = $auth_info;
         $this->http_client = app(HttpClient::class);
+        $this->obj_approval_context = app(ApprovalFlowContext::class);
+        $this->obj_service_af_node = app(ApprovalFlowInstanceNodeService::class);
+        $this->obj_service_af_related_member = app(ApprovalFlowInstanceNodeRelatedMemberService::class);
 
     }
 
@@ -68,7 +89,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
         $res = $this->http_client
             ->setAuthInfo($this->auth_info)
             ->httpPost("/api/approval-flow/generate", $data);
-        return ApprovalFlowContext::storeApprovalFlowInstance($res, $this->auth_info);
+        return $this->obj_approval_context->storeApprovalFlowInstance($res, $this->auth_info);
     }
 
     /**
@@ -83,19 +104,18 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     public function execute($instance_id, $args = []): ApprovalFlowContext
     {
         return DB::transaction(function () use ($instance_id, $args) {
-            $approvalFlowContext = ApprovalFlowContext::getContextByInstanceId($instance_id,$this->auth_info);
-            $approvalFlowContext->setArgs($args);
-            $approvalFlowContext->getStartNode()->execute($approvalFlowContext);
-
-            foreach ($approvalFlowContext->getExecutedNodes() as $executedNode) {
+            $this->obj_approval_context->getContextByInstanceId($instance_id);
+            $this->obj_approval_context->setArgs($args);
+            $this->obj_approval_context->startInstance();
+            //额外事件处理
+            foreach ($this->obj_approval_context->getExecutedNodes() as $executedNode) {
                 if ($executedNode instanceof AuditNode) {
                     $this->handleAuditExtraOperate($executedNode);
                 } elseif ($executedNode instanceof CarbonCopyNode) {
                     $this->handleCarbonCopyExtraOperate($executedNode);
                 }
             }
-
-            return $approvalFlowContext;
+            return $this->obj_approval_context;
         });
 
     }
@@ -110,16 +130,24 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      * @date: 2024/5/20 9:41
      * @remark:
      */
-    public function auditPass($instance_id, $node_id, $remark = null, $operate_time = null): ApprovalFlowContext
+    public function auditPass($node_id, $remark = null, $operate_time = null): ApprovalFlowContext
     {
         $args = [
             "node_id" => $node_id,
             "remark" => $remark,
             "operate_time" => empty($operate_time) ? date('Y-m-d H:i:s') : $operate_time
         ];
-        $approvalFlowContext = ApprovalFlowContext::getContextByInstanceId($instance_id, $this->auth_info);
-        $approvalFlowContext->setArgs($args);
-        $approvalFlowContext->getCurrentNode()->execute($approvalFlowContext);
+        DB::transaction(function () use ($instance_id,$node_id, $args) {
+
+            $obj_instance = $this->obj_service_af_node->findById($node_id)->instance??null;
+            throw_if(empty($obj_instance),ApprovalFlowException::class,"未知的审批流信息，请重试");
+
+            $approvalFlowContext = ApprovalFlowContext::getContextByInstance($obj_instance, $this->auth_info);
+            $current_node = $approvalFlowContext->getCurrentNode();
+            throw_if($current_node->id != $node_id,ApprovalFlowException::class,"未知或非活动节点，无法执行操作");
+            $approvalFlowContext->setArgs($args);
+            $approvalFlowContext->getCurrentNode()->execute($approvalFlowContext);
+        });
     }
 
     /**
@@ -205,7 +233,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      * @return $this
      * @author: wzm
      * @date: 2024/5/17 15:06
-     * @remark: TODO 想想别的更好的解决方法，这个样子需要每次调用上述审批方法时必须先指定用户身份
+     * @remark:
      */
     public function setAuthInfo(AuthInfo $auth_info)
     {

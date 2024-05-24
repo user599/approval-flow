@@ -5,8 +5,7 @@ namespace Js3\ApprovalFlow\Entity\Node;
 
 
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
-use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
-use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeOperator;
+use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeRelatedMember;
 
 /**
  * @explain:抄送节点
@@ -15,6 +14,11 @@ use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeOperator;
  */
 class CarbonCopyNode extends AbstractNode
 {
+
+    /**
+     * @var array<ApprovalFlowInstanceNodeRelatedMember> 抄送人
+     */
+    private $carbon_copy_recipients;
 
     /**
      * @explain:抄送节点直接接后续节点即可
@@ -26,11 +30,26 @@ class CarbonCopyNode extends AbstractNode
     function doExecute(ApprovalFlowContext $context)
     {
         //抄送节点直接通过
-        foreach ($this->model->operators as $operator) {
-            $operator->status = ApprovalFlowInstanceNodeOperator::STATUS_PASS;
-            $operator->operate_time = date('Y-m-d H:i:s');
-            $operator->payload = json_encode($context->getArgs());
-            $operator->save();
-        }
+        $this->obj_service_af_node->passNode($this->id,"抄送节点自动通过");
     }
+
+    /**
+     * @return ApprovalFlowInstanceNodeRelatedMember[]
+     */
+    public function getCarbonCopyRecipients()
+    {
+        return $this->carbon_copy_recipients;
+    }
+
+    /**
+     * @param ApprovalFlowInstanceNodeRelatedMember[] $carbon_copy_recipients
+     * @return CarbonCopyNode
+     */
+    public function setCarbonCopyRecipients($carbon_copy_recipients): CarbonCopyNode
+    {
+        $this->carbon_copy_recipients = $carbon_copy_recipients;
+        return $this;
+    }
+
+
 }

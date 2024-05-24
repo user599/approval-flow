@@ -36,9 +36,9 @@ abstract class AbstractNodeParser implements NodeParseable
     public function parseModelToNode(Model $data)
     {
         $this->node = $this->newNode();
+        $this->node->setId($data->id);
         $this->node->setName($data->name);
         $this->node->setModel($data);
-        $this->node->setOperator($data->operators);
         $this->parseExtra($this->node, $data);
     }
 

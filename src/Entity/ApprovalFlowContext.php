@@ -50,16 +50,11 @@ class ApprovalFlowContext
     private $auth_info;
 
     /**
-     * @var ApprovalFlowInstanceService
+     * 私有化构造函数保证只能通过指定方法实例化
      */
-    private $obj_service_af_instance;
-
-    /**
-     * @param ApprovalFlowInstanceService $obj_service_af_instance
-     */
-    public function __construct(ApprovalFlowInstanceService $obj_service_af_instance)
+    private function __construct()
     {
-        $this->obj_service_af_instance = $obj_service_af_instance;
+
     }
 
 
@@ -73,10 +68,10 @@ class ApprovalFlowContext
      * @date: 2024/5/20 17:02
      * @remark:
      */
-    public function storeApprovalFlowInstance(array $approval_data)
+    public static function storeApprovalFlowInstance(array $approval_data,AuthInfo $auth_info)
     {
-        $obj_instance = $this->obj_service_af_instance->saveInstance($approval_data);
-        return $this->getContextByInstance($obj_instance);
+        $obj_instance = app(ApprovalFlowInstanceService::class)->saveInstance($approval_data,$auth_info);
+        return self::getContextByInstance($obj_instance,$auth_info);
     }
 
     /**
@@ -89,9 +84,10 @@ class ApprovalFlowContext
      * @date: 2024/5/20 17:02
      * @remark:
      */
-    public function getContextByInstanceId($int_instance_id)
+    public static function getContextByInstanceId($int_instance_id,AuthInfo $auth_info)
     {
-        return self::getContextByInstance($this->obj_service_af_instance->findById($int_instance_id));
+        $obj_instance = app(ApprovalFlowInstanceService::class)->obj_service_af_instance->findById($int_instance_id);
+        return self::getContextByInstance($obj_instance,$auth_info);
     }
 
 
@@ -105,10 +101,12 @@ class ApprovalFlowContext
      * @date: 2024/5/20 17:02
      * @remark:
      */
-    public function getContextByInstance(ApprovalFlowInstance $obj_instance)
+    public static function getContextByInstance(ApprovalFlowInstance $obj_instance,?AuthInfo $auth_info)
     {
         $obj_instance = $obj_instance->load(["nodes", "nodes.operators"]);
-        $this->setApprovalFlowInstance($obj_instance);
+        $approvalFlowContext = new self();
+        $approvalFlowContext->setAuthInfo($auth_info);
+        $approvalFlowContext->setApprovalFlowInstance($obj_instance);
         foreach ($obj_instance->nodes as $model_node) {
             $parse_clazz = NodeParseable::NODE_PARSER_MAP[$model_node->type] ?? null;
             if (empty($parse_clazz)) {
@@ -122,19 +120,19 @@ class ApprovalFlowContext
             }
             $parser->parseModelToNode($model_node);
             $node = $parser->getNode();
-            $this->node_list[] = $node;
+            $approvalFlowContext->node_list[] = $node;
         }
 
         /**
          * 构建节点关系
          */
         //O(2n)降低复杂度
-        $ary_node_key_by_parent_id = array_column($this->node_list, null, 'parent_id');
-        foreach ($this->node_list as $node) {
+        $ary_node_key_by_parent_id = array_column($approvalFlowContext->node_list, null, 'parent_id');
+        foreach ($approvalFlowContext->node_list as $node) {
             $curr_node_id = $node->getId();
             //设置当前节点
             if ($curr_node_id == $obj_instance->current_node_id) {
-                $this->current_node = $node;
+                $approvalFlowContext->current_node = $node;
             }
             $children_node = $ary_node_key_by_parent_id[$curr_node_id] ?? null;
             if (!empty($children_node)) {
@@ -142,8 +140,25 @@ class ApprovalFlowContext
                 $children_node->setPreNode($node);
             }
         }
-        return $this;
+        return $approvalFlowContext;
     }
+
+    /**
+     * @explain:开始执行审批流
+     * @author: wzm
+     * @date: 2024/5/27 14:34
+     * @remark:
+     */
+    public function startInstance()
+    {
+        DB::transaction(function () {
+            throw_if($this->approval_flow_instance->status !== ApprovalFlowInstance::STATUS_NOT_START, ApprovalFlowException::class,"审批流已开始");
+            $this->approval_flow_instance->status = ApprovalFlowInstance::STATUS_RUNNING;
+            $this->getStartNode()->execute($this);
+            $this->approval_flow_instance->save();
+        });
+    }
+
 
     /**
      * @explain: 获取开始节点
@@ -156,6 +171,8 @@ class ApprovalFlowContext
     {
         return $this->node_list[0];
     }
+
+    //region getter and setter
 
     /**
      * @return AbstractNode

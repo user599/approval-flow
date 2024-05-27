@@ -18,7 +18,7 @@ use Js3\ApprovalFlow\Generators\RelateApplicationGenerator;
  * @author: wzm
  * @date: 2024/5/17 15:26
  */
-class ApprovalFlowRelateApplicationController extends Controller
+class ApprovalFlowRelatedApplicationController extends Controller
 {
 
     /**
@@ -35,23 +35,18 @@ class ApprovalFlowRelateApplicationController extends Controller
     {
         $this->application = $application;
         //验证身份信息
-        try {
-            $str_token = $request->header("token");
-            if (empty($str_token)) {
-                //TODO 调试用
-                if (!$request->exists("debug")) {
-                    throw new ApprovalFlowException("未知的身份信息");
-                } else {
-                    $this->auth_info = new AuthInfo(["id" => 15], AuthInfo::AUTH_TYPE_FRONT);
-                }
-            } else {
-                $auth_info = $encrypter->decrypt($str_token);
-                $this->auth_info = new AuthInfo($auth_info['auth_data'], $auth_info['auth_type']);
+        $str_token = $request->header("token");
+        if (empty($str_token)) {
+            throw new ApprovalFlowException("身份验证失败：未知的身份信息");
+        } else {
+            $auth_info = $encrypter->decrypt($str_token);
+            $auth_info = json_decode($auth_info,true);
+            if (empty($auth_info["auth_data"]) || empty($auth_info["auth_data"]["id"]) || empty($auth_info["auth_type"])) {
+                throw new ApprovalFlowException("身份验证失败：缺少必要参数");
             }
-        } catch (\Exception $e) {
-            throw new ApprovalFlowException("验证身份信息失败", 500, $e);
+            $this->auth_info = new AuthInfo($auth_info['auth_data'], $auth_info['auth_type']);
         }
-
+        return $this->auth_info;
     }
 
     /**
@@ -64,7 +59,7 @@ class ApprovalFlowRelateApplicationController extends Controller
      * @date: 2024/5/20 9:15
      * @remark:
      */
-    public function getRelateApplicationOptions($slug): array
+    public function getOptions($slug): array
     {
         /** @var RelateApplicationGenerator $generator */
         $generator = $this->application->make(RelateApplicationFactory::chooseGenerator($slug));
@@ -83,7 +78,7 @@ class ApprovalFlowRelateApplicationController extends Controller
      * @date: 2024/5/20 9:16
      * @remark:
      */
-    public function getRelateApplicationChildren($slug, $id): array
+    public function getChildren($slug, $id): array
     {
         /** @var RelateApplicationGenerator $generator */
         $generator = $this->application->make(RelateApplicationFactory::chooseGenerator($slug));

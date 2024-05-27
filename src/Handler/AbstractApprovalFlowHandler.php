@@ -14,6 +14,7 @@ use Js3\ApprovalFlow\HttpClient\HttpClient;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeRelatedMemberService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeService;
+use Js3\ApprovalFlow\Service\ApprovalFlowInstanceService;
 
 /**
  * @explain:抄送审批流处理
@@ -39,6 +40,11 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     private $http_client;
 
     /**
+     * @var ApprovalFlowInstanceService
+     */
+    private $obj_service_af_instance;
+
+    /**
      * @var ApprovalFlowInstanceNodeService
      */
     private $obj_service_af_node;
@@ -48,10 +54,6 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      */
     private $obj_service_af_related_member;
 
-    /**
-     * @var ApprovalFlowContext
-     */
-    private $obj_approval_context;
 
     /**
      * @param AuthInfo 身份信息，需要用户自行填入
@@ -63,7 +65,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     {
         $this->auth_info = $auth_info;
         $this->http_client = app(HttpClient::class);
-        $this->obj_approval_context = app(ApprovalFlowContext::class);
+        $this->obj_service_af_instance = app(ApprovalFlowInstanceService::class);
         $this->obj_service_af_node = app(ApprovalFlowInstanceNodeService::class);
         $this->obj_service_af_related_member = app(ApprovalFlowInstanceNodeRelatedMemberService::class);
 
@@ -89,7 +91,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
         $res = $this->http_client
             ->setAuthInfo($this->auth_info)
             ->httpPost("/api/approval-flow/generate", $data);
-        return $this->obj_approval_context->storeApprovalFlowInstance($res, $this->auth_info);
+        return ApprovalFlowContext::storeApprovalFlowInstance($res, $this->auth_info);
     }
 
     /**
@@ -104,18 +106,18 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     public function execute($instance_id, $args = []): ApprovalFlowContext
     {
         return DB::transaction(function () use ($instance_id, $args) {
-            $this->obj_approval_context->getContextByInstanceId($instance_id);
-            $this->obj_approval_context->setArgs($args);
-            $this->obj_approval_context->startInstance();
+            $obj_approval_flow_context = ApprovalFlowContext::getContextByInstanceId($instance_id);
+            $obj_approval_flow_context->setArgs($args);
+            $obj_approval_flow_context->startInstance();
             //额外事件处理
-            foreach ($this->obj_approval_context->getExecutedNodes() as $executedNode) {
+            foreach ($obj_approval_flow_context->getExecutedNodes() as $executedNode) {
                 if ($executedNode instanceof AuditNode) {
                     $this->handleAuditExtraOperate($executedNode);
                 } elseif ($executedNode instanceof CarbonCopyNode) {
                     $this->handleCarbonCopyExtraOperate($executedNode);
                 }
             }
-            return $this->obj_approval_context;
+            return $obj_approval_flow_context;
         });
 
     }
@@ -137,16 +139,28 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
             "remark" => $remark,
             "operate_time" => empty($operate_time) ? date('Y-m-d H:i:s') : $operate_time
         ];
-        DB::transaction(function () use ($instance_id,$node_id, $args) {
+        return DB::transaction(function () use ($node_id, $args) {
+            $obj_instance = $this->obj_service_af_node->findById($node_id)->instance ?? null;
+            throw_if(empty($obj_instance), ApprovalFlowException::class, "未知的审批流信息，请重试");
+            throw_if($obj_instance->status != ApprovalFlowInstance::STATUS_RUNNING, ApprovalFlowException::class, "审批流未开始或已结束");
 
-            $obj_instance = $this->obj_service_af_node->findById($node_id)->instance??null;
-            throw_if(empty($obj_instance),ApprovalFlowException::class,"未知的审批流信息，请重试");
+            //格式化审批流信息
+            $obj_approval_flow_context = ApprovalFlowContext::getContextByInstance($obj_instance, $this->auth_info);
 
-            $approvalFlowContext = ApprovalFlowContext::getContextByInstance($obj_instance, $this->auth_info);
-            $current_node = $approvalFlowContext->getCurrentNode();
-            throw_if($current_node->id != $node_id,ApprovalFlowException::class,"未知或非活动节点，无法执行操作");
-            $approvalFlowContext->setArgs($args);
-            $approvalFlowContext->getCurrentNode()->execute($approvalFlowContext);
+            //若节点已更新则不允许审核
+            $current_node = $obj_approval_flow_context->getCurrentNode();
+            throw_if($current_node->getId() != $node_id, ApprovalFlowException::class, "未知或非活动节点，无法执行操作");
+            $obj_approval_flow_context->setArgs($args);
+            $obj_approval_flow_context->getCurrentNode()->execute($obj_approval_flow_context);
+            //额外事件处理
+            foreach ($obj_approval_flow_context->getExecutedNodes() as $executedNode) {
+                if ($executedNode instanceof AuditNode) {
+                    $this->handleAuditExtraOperate($executedNode);
+                } elseif ($executedNode instanceof CarbonCopyNode) {
+                    $this->handleCarbonCopyExtraOperate($executedNode);
+                }
+            }
+            return $obj_approval_flow_context;
         });
     }
 
@@ -160,24 +174,61 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      * @date: 2024/5/20 9:41
      * @remark:
      */
-    public function reject($node_id, $remark = null, $operate_time = null): ApprovalFlowContext
+    public function reject($node_id, $remark = null): ApprovalFlowContext
     {
-        // TODO: Implement reject() method.
+        return DB::transaction(function () use ($node_id, $remark) {
+            $obj_instance = $this->obj_service_af_node->findById($node_id)->instance ?? null;
+            throw_if(empty($obj_instance), ApprovalFlowException::class, "未知的审批流信息，请重试");
+            throw_if($obj_instance->status != ApprovalFlowInstance::STATUS_RUNNING, ApprovalFlowException::class, "审批流未开始或已结束");
+            /**
+             *
+             */
+            return null;
+        });
     }
 
     /**
      * @explain: 撤销
      * @param $instance_id
      * @param $remark
-     * @param $operate_time
      * @return ApprovalFlowContext
      * @author: wzm
      * @date: 2024/5/20 9:42
      * @remark:
      */
-    public function revocation($instance_id, $remark = null, $operate_time = null)
+    public function withdraw($instance_id, $remark = null)
     {
-        // TODO: Implement revocation() method.
+        DB::transaction(function ($instance_id, $remark = null) {
+            $obj_approval_flow_instance = $this->obj_service_af_instance->findById($instance_id);
+            throw_if(!$obj_approval_flow_instance->allow_withdraw, ApprovalFlowException::class, "该审批流禁止撤回");
+            throw_if(!$obj_approval_flow_instance->status == ApprovalFlowInstance::STATUS_WITHDRAW, ApprovalFlowException::class, "该审批流已撤回，请勿重复操作");
+            //验证撤回类型
+            switch ($obj_withdraw_type = $obj_approval_flow_instance->withdraw_type) {
+                case ApprovalFlowInstance::WITHDRAW_TYPE_NOT_IN_PROGRESS:
+                    //未进入流程时撤回：未开始，开始但未审核
+                    if (!in_array($obj_approval_flow_instance->status ,[ApprovalFlowInstance::STATUS_NOT_START, ApprovalFlowInstance::STATUS_RUNNING])
+                        || $obj_approval_flow_instance->has_audit != ApprovalFlowInstance::HAS_AUDIT_FALSE
+                    ) {
+                        throw new ApprovalFlowException("该审批流已进入流程，禁止撤回");
+                    }
+                    break;
+                case ApprovalFlowInstance::WITHDRAW_TYPE_IN_PROGRESS:
+                    if ($obj_approval_flow_instance->status == ApprovalFlowInstance::STATUS_END) {
+                        throw new ApprovalFlowException("该审批流已结束，禁止撤回");
+                    }
+                    break;
+                case ApprovalFlowInstance::WITHDRAW_TYPE_END:
+                    break;
+                default:
+                    throw new ApprovalFlowException("未知的撤回类型:{$obj_withdraw_type}");
+            };
+
+            //设置实例为已撤回
+            $obj_approval_flow_instance->status = ApprovalFlowInstance::STATUS_WITHDRAW;
+            $obj_approval_flow_instance->remark = $remark;
+            $obj_approval_flow_instance->end_time = date('Y-m-d H:i:s');
+            $obj_approval_flow_instance->save();
+        });
     }
 
     /**
@@ -190,7 +241,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      */
     public function getStatus($instance_id)
     {
-        // TODO: Implement getStatus() method.
+        return ApprovalFlowContext::getContextByInstanceId($instance_id);
     }
 
     /**

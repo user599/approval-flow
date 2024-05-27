@@ -20,15 +20,15 @@ use Js3\ApprovalFlow\Parser\AbstractNodeParser;
 class CarbonCopyNodeParser extends AbstractNodeParser
 {
 
-
-
     protected function newNode()
     {
-        return new CarbonCopyNode();
+        return $this->app->make(CarbonCopyNode::class);
     }
 
 
-
-
+    protected function parseExtra(AbstractNode $node, Model $model)
+    {
+        $node->setCarbonCopyRecipients($model->relatedMembers??null);
+    }
 
 }

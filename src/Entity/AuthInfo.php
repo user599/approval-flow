@@ -2,7 +2,12 @@
 
 namespace Js3\ApprovalFlow\Entity;
 
-class AuthInfo
+use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Contracts\Support\Jsonable;
+use JsonSerializable;
+
+
+class AuthInfo implements Arrayable,Jsonable,JsonSerializable
 {
 
 
@@ -104,6 +109,34 @@ class AuthInfo
         return $auth_id == $this->getAuthId() && $auth_type == $this->getAuthType();
     }
 
+    public function toArray()
+    {
+        return [
+            "auth_data" => $this->auth_data,
+            "auth_type" => $this->auth_type
+        ];
+    }
 
+    /**
+     * Convert the model instance to JSON.
+     *
+     * @param  int  $options
+     * @return string
+     *
+     * @throws \Illuminate\Database\Eloquent\JsonEncodingException
+     */
+    public function toJson($options = 0)
+    {
+        return json_encode($this->jsonSerialize(), $options);
+    }
 
+    /**
+     * Convert the object into something JSON serializable.
+     *
+     * @return array
+     */
+    public function jsonSerialize()
+    {
+        return $this->toArray();
+    }
 }

@@ -69,8 +69,8 @@ class ApprovalFlowInstanceService
         return DB::transaction(function () use ($ary_data,$auth_info) {
             $ary_insert_data = [
                 "config_id" => $ary_data["config_id"],
-                "can_revocation" => $ary_data["can_vocation"],
-                "revocation_type" => $ary_data["revocation_type"],
+                "allow_withdraw" => $ary_data["allow_withdraw"],
+                "withdraw_type" => $ary_data["withdraw_type"],
                 "creator_id" => $auth_info->getAuthId(),
                 "creator_time" => date('Y-m-d H:i:s'),
                 "status" => ApprovalFlowInstance::STATUS_NOT_START,
@@ -86,21 +86,5 @@ class ApprovalFlowInstanceService
 
     }
 
-    /**
-     * @explain: 开始执行实例
-     * @param $mix_instance
-     * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Eloquent\Builder[]|\Illuminate\Database\Eloquent\Collection|\Illuminate\Database\Eloquent\Model|mixed|null
-     * @throws \Throwable
-     * @author: wzm
-     * @date: 2024/5/24 14:09
-     * @remark:
-     */
-    public function startInstance($mix_instance) {
-        $obj_instance = is_object($mix_instance) ? $mix_instance : $this->findById($mix_instance);
-        throw_if($obj_instance->status !== ApprovalFlowInstance::STATUS_NOT_START, ApprovalFlowException::class,"审批流已开始");
-        $obj_instance->status = ApprovalFlowInstance::STATUS_RUNNING;
-        $obj_instance->save();
-        return $obj_instance;
-    }
 
 }

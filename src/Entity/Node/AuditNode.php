@@ -63,6 +63,8 @@ class AuditNode extends AbstractNode
         $auth_info = $context->getAuthInfo();
         /**
          * 处理是否自动通过当前操作人
+         * 1.历史节点存在当前审批人自动通过
+         * 2.申请人即是审批人自动通过
          */
         $will_auto_pass = false;
         if ($this->approved_when_same_with_history) {
@@ -81,7 +83,10 @@ class AuditNode extends AbstractNode
             }
         }
         if ($this->approved_when_same_with_applicant) {
-            if ($auth_info->isSameMember($context->getApprovalFlowInstance()->creator_id, $context->getApprovalFlowInstance()->creator_type)) {
+            if ($auth_info->isSameMember(
+                $context->getApprovalFlowInstance()->creator_id,
+                $context->getApprovalFlowInstance()->creator_type)
+            ) {
                 $will_auto_pass = true;
             }
         }
@@ -101,19 +106,89 @@ class AuditNode extends AbstractNode
         //若当前节点审核类型是会签（所有人都同意
         if ($this->audit_type == self::AUDIT_TYPE_UNION) {
             return collect($this->auditors)->filter(function ($item) {
-                    return $item->status !== 1;
+                    return $item->status !== ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS;
                 })->count() > 0;
         } elseif ($this->audit_type == self::AUDIT_TYPE_OR) {
             //或签，只要有一个同意即可
             return collect($this->auditors)->filter(function ($item) {
-                    return $item->status == 1;
+                    return $item->status == ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS;
                 })->count() > 0;
         } else {
             throw new ApprovalFlowException("审核节点[{$this->name}]的审核类型异常:{$this->audit_type}，请联系管理员");
         }
-
-
     }
+    //region getter // setter
+    /**
+     * @param int $audit_type
+     * @return AuditNode
+     */
+    public function setAuditType(int $audit_type): AuditNode
+    {
+        $this->audit_type = $audit_type;
+        return $this;
+    }
+
+    /**
+     * @param int $reject_type
+     * @return AuditNode
+     */
+    public function setRejectType(int $reject_type): AuditNode
+    {
+        $this->reject_type = $reject_type;
+        return $this;
+    }
+
+    /**
+     * @param string $other_operate
+     * @return AuditNode
+     */
+    public function setOtherOperate(string $other_operate): AuditNode
+    {
+        $this->other_operate = $other_operate;
+        return $this;
+    }
+
+    /**
+     * @param int $operate_method
+     * @return AuditNode
+     */
+    public function setOperateMethod(int $operate_method): AuditNode
+    {
+        $this->operate_method = $operate_method;
+        return $this;
+    }
+
+    /**
+     * @param bool $approved_when_same_with_applicant
+     * @return AuditNode
+     */
+    public function setApprovedWhenSameWithApplicant(bool $approved_when_same_with_applicant): AuditNode
+    {
+        $this->approved_when_same_with_applicant = $approved_when_same_with_applicant;
+        return $this;
+    }
+
+    /**
+     * @param bool $approved_when_same_with_history
+     * @return AuditNode
+     */
+    public function setApprovedWhenSameWithHistory(bool $approved_when_same_with_history): AuditNode
+    {
+        $this->approved_when_same_with_history = $approved_when_same_with_history;
+        return $this;
+    }
+
+    /**
+     * @param ApprovalFlowInstanceNodeRelatedMember[] $auditors
+     * @return AuditNode
+     */
+    public function setAuditors(array $auditors): AuditNode
+    {
+        $this->auditors = $auditors;
+        return $this;
+    }
+
+
 
 
 }

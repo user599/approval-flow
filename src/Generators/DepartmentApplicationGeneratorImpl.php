@@ -35,7 +35,6 @@ class DepartmentApplicationGeneratorImpl implements RelateApplicationGenerator
     public function options(AuthInfo $authInfo): array
     {
         return $this->ary_demo;
-
     }
 
     /**

@@ -17,13 +17,15 @@ class CreateApprovalFlowInstanceTable extends Migration
             $table->bigIncrements("id");
             $table->bigInteger("config_id")->comment("配置信息id");
             $table->bigInteger("current_node_id")->comment("当前节点id");
-            $table->tinyInteger("can_revocation")->default(0)->comment("是否允许撤回【0否 1是】");
-            $table->tinyInteger("revocation_type")->nullable()->comment("撤回类型【1 未进入流程时撤回 2 流程中撤回 3流程结束后撤回");
+            $table->tinyInteger("allow_withdraw")->default(0)->comment("是否允许撤回【0否 1是】");
+            $table->tinyInteger("withdraw_type")->nullable()->comment("撤回类型【1 未进入流程时撤回 2 流程中撤回 3流程结束后撤回");
             $table->tinyInteger("status")->default(\Js3\ApprovalFlow\Model\ApprovalFlowInstance::STATUS_NOT_START)->comment("实例状态【1 未开始 2 进行中 3 已结束 4 撤销】");
+            $table->tinyInteger("has_audit")->default(0)->comment("是否存在审核记录（用于撤销时判断是否进入流程");
+            $table->dateTime("end_time")->nullable()->comment("结束时间");
+            $table->string("remark")->nullable()->comment("备注");
             $table->text("form_data")->nullable()->comment("表单数据");
             $table->string("creator_id")->nullable()->comment("创建人");
             $table->string("creator_type")->nullable()->comment("创建人类型");
-            $table->dateTime("end_time")->nullable()->comment("结束时间");
             $table->dateTime('created_at')->nullable();
             $table->dateTime('updated_at')->nullable();
             $table->dateTime('deleted_at')->nullable();

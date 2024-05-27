@@ -10,7 +10,6 @@ use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
 use Js3\ApprovalFlow\Parser\impl\ApplyNodeParser;
 use Js3\ApprovalFlow\Parser\impl\AuditNodeParser;
 use Js3\ApprovalFlow\Parser\impl\CarbonCopyNodeParser;
-use Js3\ApprovalFlow\Parser\impl\EndNodeParser;
 
 /**
  * @explain:
@@ -39,4 +38,5 @@ interface NodeParseable
     public function parseModelToNode(Model $data);
 
     public function getNode(): AbstractNode;
+
 }

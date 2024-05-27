@@ -48,7 +48,7 @@ class AesEncrypter implements Encrypter
         if($padding == 0){
             return $decrypted;
         }
-        return base64_decode(substr($decrypted, 0, -$padding),true);
+        return substr($decrypted, 0, -$padding);
     }
 
     //填充
@@ -56,5 +56,6 @@ class AesEncrypter implements Encrypter
         $pad = $blocksize - (strlen($text) % $blocksize);
         return $text . str_repeat(chr($pad), $pad);
     }
+
 
 }

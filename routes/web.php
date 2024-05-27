@@ -15,9 +15,9 @@ Route::prefix("api/approval-flow")->middleware(["api"])->group(function () {
     /**
      * 关联应用相关
      */
-    Route::prefix("relate-application")->group(function() {
-        Route::get("{slug}","\Js3\ApprovalFlow\Controller\ApprovalFlowRelateApplicationController@getRelateApplicationOptions");
-        Route::get("{slug}/{id}","\Js3\ApprovalFlow\Controller\ApprovalFlowRelateApplicationController@getRelateApplicationChildren");
+    Route::prefix("related-application")->group(function() {
+        Route::get("{slug}","\Js3\ApprovalFlow\Controller\ApprovalFlowRelatedApplicationController@getOptions");
+        Route::get("{slug}/{id}","\Js3\ApprovalFlow\Controller\ApprovalFlowRelatedApplicationController@getChildren");
 
     });
 

@@ -4,13 +4,10 @@
 namespace Js3\ApprovalFlow\Parser;
 
 
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Model;
 use Js3\ApprovalFlow\Entity\Node\AbstractNode;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
-use Js3\ApprovalFlow\Model\ApprovalFlowNode;
-use Js3\ApprovalFlow\Parser\impl\ApplyNodeParser;
-use Js3\ApprovalFlow\Parser\impl\AuditNodeParser;
-use Js3\ApprovalFlow\Parser\impl\CarbonCopyNodeParser;
 
 /**
  * @explain:
@@ -24,6 +21,21 @@ abstract class AbstractNodeParser implements NodeParseable
      * @var AbstractNode
      */
     private $node;
+
+    /**
+     * @var Application
+     */
+    protected $app;
+
+    /**
+     * @param Application $app
+     */
+    public function __construct(Application $app)
+    {
+        $this->app = $app;
+    }
+
+
 
 
     /**
@@ -47,6 +59,7 @@ abstract class AbstractNodeParser implements NodeParseable
         return $this->node;
     }
 
+
     /**
      * @explain: 要创建的节点
      * @return mixed
@@ -56,6 +69,7 @@ abstract class AbstractNodeParser implements NodeParseable
      * @remark:
      */
     abstract protected function newNode();
+
 
     /**
      * @explain:额外的格式化操作

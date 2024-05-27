@@ -6,9 +6,11 @@ namespace Js3\ApprovalFlow\Entity\Node;
 
 use Illuminate\Database\Eloquent\Model;
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
+use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeRelatedMemberService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeService;
+use Js3\ApprovalFlow\Service\ApprovalFlowInstanceService;
 
 
 /**
@@ -44,6 +46,14 @@ abstract class AbstractNode
      */
     protected $next_node;
 
+    protected $pre_interceptors = [];
+    protected $post_interceptors = [];
+
+    /**
+     * @var ApprovalFlowInstanceService
+     */
+    protected $obj_service_af_instance;
+
 
     /**
      * @var ApprovalFlowInstanceNodeService
@@ -56,11 +66,16 @@ abstract class AbstractNode
     protected $obj_service_af_related_member;
 
     /**
+     * @param ApprovalFlowInstanceService $obj_service_af_instance
      * @param ApprovalFlowInstanceNodeService $obj_service_af_node
      * @param ApprovalFlowInstanceNodeRelatedMemberService $obj_service_af_related_member
      */
-    public function __construct(ApprovalFlowInstanceNodeService $obj_service_af_node, ApprovalFlowInstanceNodeRelatedMemberService $obj_service_af_related_member)
-    {
+    public function __construct(
+        ApprovalFlowInstanceService                  $obj_service_af_instance,
+        ApprovalFlowInstanceNodeService              $obj_service_af_node,
+        ApprovalFlowInstanceNodeRelatedMemberService $obj_service_af_related_member
+    ){
+        $this->obj_service_af_instance = $obj_service_af_instance;
         $this->obj_service_af_node = $obj_service_af_node;
         $this->obj_service_af_related_member = $obj_service_af_related_member;
     }
@@ -89,9 +104,14 @@ abstract class AbstractNode
             //若还有下个节点则继续执行
             if (!empty($this->next_node)) {
                 $this->next_node->execute($context);
+            } else {
+                //没有下一个节点了，结束审批流
+                $approvalFlowInstance = $context->getApprovalFlowInstance();
+                $approvalFlowInstance->end_time = date('Y-m-d H:i:s');
+                $approvalFlowInstance->status = ApprovalFlowInstance::STATUS_END;
+                $approvalFlowInstance->save();
             }
         }
-
     }
 
     /**
@@ -119,6 +139,7 @@ abstract class AbstractNode
 
 
     //region getter // setter
+
     /**
      * @return int
      */
@@ -200,6 +221,28 @@ abstract class AbstractNode
         $this->next_node = $next_node;
         return $this;
     }
+
+    /**
+     * @param callable $pre_interceptor
+     * @return AbstractNode
+     */
+    public function setPreInterceptor(callable $pre_interceptor): AbstractNode
+    {
+        $this->pre_interceptors[] = $pre_interceptor;
+        return $this;
+    }
+
+    /**
+     * @param callable $post_interceptor
+     * @return AbstractNode
+     */
+    public function setPostInterceptor(callable $post_interceptor): AbstractNode
+    {
+        $this->post_interceptors[] = $post_interceptor;
+        return $this;
+    }
+
+
     //endregion
 
 

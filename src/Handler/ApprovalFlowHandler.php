@@ -47,20 +47,19 @@ interface ApprovalFlowHandler
      * @explain: 拒绝
      * @param $node_id
      * @param $remark
-     * @param $operate_time
      * @return ApprovalFlowContext
      * @author: wzm
      * @date: 2024/5/17 14:45
      * @remark:
      */
-    public function reject($node_id, $remark = null, $operate_time = null): ApprovalFlowContext;
+    public function reject($node_id, $remark = null): ApprovalFlowContext;
 
     /**
      * @explain:撤销
      * @param $remark
      * @return mixed
      */
-    public function revocation($instance_id, $remark = null, $operate_time = null);
+    public function withdraw($instance_id, $remark = null);
 
     /**
      * @explain 获取审批实例状态

@@ -24,8 +24,20 @@ class ApprovalFlowInstance extends AbstractApprovalFlowBaseModel
     const STATUS_NOT_START = 1;
     const STATUS_RUNNING = 2;
     const STATUS_END = 3;
-    const STATUS_REVOCATION = 4;
+    const STATUS_WITHDRAW = 4;
 
+    /**
+     * 撤回类型 1 未进入流程时 2流程中 3 流程结束时
+     */
+    const WITHDRAW_TYPE_NOT_IN_PROGRESS = 1;
+    const WITHDRAW_TYPE_IN_PROGRESS = 2;
+    const WITHDRAW_TYPE_END = 3;
+
+    /**
+     * 是否存在审核信息
+     */
+    const HAS_AUDIT_TRUE  = 1;
+    const HAS_AUDIT_FALSE = 0;
 
 
 

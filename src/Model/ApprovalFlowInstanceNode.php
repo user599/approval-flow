@@ -17,10 +17,17 @@ class ApprovalFlowInstanceNode extends AbstractApprovalFlowBaseModel
     protected $table = 'approval_flow_instance_node';
     protected $guarded = [];
 
+    /**
+     * 节点类型
+     * 申请节点
+     * 分支节点
+     * 抄送节点
+     * 审批节点
+     */
     const NODE_TYPE_APPLY = 1;
+    const NODE_TYPE_BRANCH = 2;
     const NODE_TYPE_CARBON_COPY = 3;
     const NODE_TYPE_AUDIT = 4;
-    const NODE_TYPE_END=5;
 
     /**
      * @explain:所属实例

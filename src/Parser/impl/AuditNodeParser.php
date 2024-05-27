@@ -20,7 +20,30 @@ class AuditNodeParser extends AbstractNodeParser
 
     protected function newNode()
     {
-        return new AuditNode();
+        return $this->app->make(AuditNode::class);
     }
+
+    /**
+     * @explain:
+     * @param AuditNode $node
+     * @param Model $model
+     * @author: wzm
+     * @date: 2024/5/27 14:19
+     * @remark:
+     */
+    protected function parseExtra(AbstractNode $node, Model $model)
+    {
+
+        return $node->setAuditType($model->audit_type)
+            ->setRejectType($model->reject_type)
+            ->setOtherOperate($model->other_operate)
+            ->setOperateMethod($model->operate_method)
+            ->setApprovedWhenSameWithApplicant($model->approved_when_same_with_applicant)
+            ->setApprovedWhenSameWithHistory($model->approved_when_same_with_history)
+            ->setAuditors($model->relatedMembers)
+            ;
+
+    }
+
 
 }

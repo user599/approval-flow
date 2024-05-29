@@ -249,7 +249,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      */
     public function getStatus($instance_id)
     {
-        return ApprovalFlowContext::getContextByInstanceId($instance_id);
+        return ApprovalFlowContext::getContextByInstanceId($instance_id,$this->auth_info);
     }
 
     /**

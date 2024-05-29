@@ -4,6 +4,7 @@
 namespace Js3\ApprovalFlow\Entity\Node;
 
 
+use Illuminate\Support\Facades\DB;
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
@@ -32,8 +33,22 @@ class ApplyNode extends AbstractNode
      */
     function doExecute(ApprovalFlowContext $context)
     {
-        //直接通过节点
-        $this->obj_service_af_node->passNode($this->id,"申请节点自动通过");
+        /**
+         * 1.开始审批实例
+         * 2.申请节点值直接通过
+         * 3.申请人设置为通过
+         */
+        $obj_instance = $context->getApprovalFlowInstance();
+        if ($obj_instance->status != ApprovalFlowInstance::STATUS_NOT_START) {
+           throw new ApprovalFlowException("审批流已开始");
+        }
+        $obj_instance->status = ApprovalFlowInstance::STATUS_RUNNING;
+        $current_date = date('Y-m-d H:i:s');
+        $this->setPassTime($current_date);
+        $this->model->remark = "申请节点自动通过";
+        $this->applicant->status =  ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS;
+        $this->applicant->operate_time = $current_date;
+        $this->applicant->remark = $current_date;
     }
 
 

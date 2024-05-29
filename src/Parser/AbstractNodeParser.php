@@ -55,6 +55,7 @@ abstract class AbstractNodeParser implements NodeParseable
         $this->node->setName($data->name);
         $this->node->setModel($data);
         $this->node->setParentId($data->parent_id);
+        $this->node->setPassTime($data->pass_time);
         $this->parseExtra($this->node, $data);
     }
 

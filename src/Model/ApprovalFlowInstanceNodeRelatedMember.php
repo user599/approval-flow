@@ -49,6 +49,10 @@ class ApprovalFlowInstanceNodeRelatedMember extends AbstractApprovalFlowBaseMode
         return $this->belongsTo(ApprovalFlowInstanceNode::class, "instance_id");
     }
 
+    public function operateRecords() {
+        return $this->hasMany(ApprovalFlowInstanceNodeOperateRecord::class,"related_member_id");
+    }
+
     public function scopeOfAuth($query,AuthInfo $authInfo) {
         return $query->where("member_id",$authInfo->getAuthId())
             ->where("member_type",$authInfo->getAuthType());

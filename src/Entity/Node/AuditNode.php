@@ -8,6 +8,7 @@ use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
 use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
+use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeOperateRecord;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeOperator;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeRelatedMember;
 use Js3\ApprovalFlow\Model\ApprovalFlowNodeOperator;
@@ -66,7 +67,7 @@ class AuditNode extends AbstractNode
          * 1.历史节点存在当前审批人自动通过
          * 2.申请人即是审批人自动通过
          */
-        $ary_autopass_member = [];
+        $ary_auto_pass_member = [];
         if ($this->approved_when_same_with_history) {
             //若当前操作人之前审批过
             $temp_node = $this->pre_node;
@@ -74,7 +75,7 @@ class AuditNode extends AbstractNode
                 if ($temp_node instanceof AuditNode) {
                     foreach ($temp_node->auditors as $related_member) {
                         if ($auth_info->isSameMember($related_member->member_id, $related_member->member_type)) {
-                            $ary_autopass_member[] = $related_member;
+                            $ary_auto_pass_member[] = $related_member;
                         }
                     }
                 }
@@ -83,19 +84,16 @@ class AuditNode extends AbstractNode
         }
         if ($this->approved_when_same_with_applicant) {
             //申请人就是审核人
-            $creator_auth_info = new AuthInfo(["id" => $context->getApprovalFlowInstance()->creator_id],$context->getApprovalFlowInstance()->creator_type);
+            $creator_auth_info = new AuthInfo(["id" => $context->getApprovalFlowInstance()->creator_id], $context->getApprovalFlowInstance()->creator_type);
             foreach ($this->auditors as $auditor) {
                 if ($creator_auth_info->isSameMember($auditor->member_id, $auditor->member_type)) {
-                    $ary_autopass_member[] = $auditor;
+                    $ary_auto_pass_member[] = $auditor;
                 }
             }
-
         }
-        foreach ($ary_autopass_member as $member) {
-            //自动通过该人员
-            $this->obj_service_af_related_member->passMember($member,"审批节点满足自动通过条件");
+        foreach ($ary_auto_pass_member as $member) {
+            $this->autoPassMember($member);
         }
-
     }
 
     /**
@@ -118,6 +116,7 @@ class AuditNode extends AbstractNode
         }
     }
     //region getter // setter
+
     /**
      * @param int $approve_type
      * @return AuditNode
@@ -142,7 +141,7 @@ class AuditNode extends AbstractNode
      * @param string $other_operate
      * @return AuditNode
      */
-    public function setOtherOperate( $other_operate): AuditNode
+    public function setOtherOperate($other_operate): AuditNode
     {
         $this->other_operate = $other_operate;
         return $this;
@@ -188,7 +187,35 @@ class AuditNode extends AbstractNode
         return $this;
     }
 
+    /**
+     * @explain: 自动通过指定人员
+     * @param $member
+     * @author: wzm
+     * @date: 2024/5/29 17:09
+     * @remark:
+     */
+    private function autoPassMember($member)
+    {
+        if ($member->status == ApprovalFlowInstanceNodeRelatedMember::STATUS_UN_OPERATE) {
+            //对于状态为未操作的，自动通过该人员
+            $member->status = ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS;
+            $member->operate_time = date('Y-m-d H:i:s');
+            $member->remark = "审批节点满足自动通过条件";
+            //保存操作记录
+            $operate_record = new ApprovalFlowInstanceNodeOperateRecord([
+                'node_id' => $this->id,
+                'instance_id' => $this->model->instance_id,
+                'status' => ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS,
+                'operate_time' => date('Y-m-d H:i:s'),
+                'remark' => '审批节点满足自动通过条件'
+            ]);
+            $member->operateRecords()->save($operate_record);
+        } elseif(in_array($member->status,[ApprovalFlowInstanceNodeRelatedMember::STATUS_REFUSE,ApprovalFlowInstanceNodeRelatedMember::STATUS_WITHDRAW])) {
+            //对于拒绝，撤回的抛出异常
+            throw new ApprovalFlowException("该人员当前状态为[{$member->status}]，无法自动通过");
+        }
 
+    }
 
 
 }

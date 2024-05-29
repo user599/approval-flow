@@ -5,6 +5,8 @@ namespace Js3\ApprovalFlow\Entity\Node;
 
 
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
+use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
+use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeRelatedMember;
 
 /**
@@ -29,8 +31,19 @@ class CarbonCopyNode extends AbstractNode
      */
     function doExecute(ApprovalFlowContext $context)
     {
+        if (!empty($this->model->pass_time)) {
+            throw new ApprovalFlowException("抄送节点已通过,无法重复执行");
+        }
         //抄送节点直接通过
-        $this->obj_service_af_node->passNode($this->id,"抄送节点自动通过");
+        $current_date = date('Y-m-d H:i:s');
+        $str_remark = "抄送节点自动通过";
+        $this->setPassTime($current_date);
+        $this->model->remark = $str_remark;
+        foreach ($this->carbon_copy_recipients as $carbon_copy_recipient) {
+            $carbon_copy_recipient->status = ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS;
+            $carbon_copy_recipient->operate_time = $current_date;
+            $carbon_copy_recipient->remark = $str_remark;
+        }
     }
 
     /**

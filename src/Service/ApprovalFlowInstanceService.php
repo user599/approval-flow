@@ -83,8 +83,6 @@ class ApprovalFlowInstanceService
         $obj_instance->current_node_id = $obj_node->id;
         $obj_instance->save();
         return $obj_instance;
-
-
     }
 
 

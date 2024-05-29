@@ -79,60 +79,6 @@ class ApprovalFlowInstanceNodeRelatedMemberService
         }
     }
 
-    /**
-     * @explain:通过相关人
-     * @param $related_members
-     * @author: wzm
-     * @date: 2024/5/24 15:47
-     * @remark:
-     */
-    public function passMemberByNodeId($node_id, $remark = null)
-    {
-        return $this->obj_model_related_member->newQuery()
-            ->where("node_id", $node_id)
-            ->update([
-                "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS,
-                "operate_time" => date('Y-m-d H:i:s'),
-                "remark" => $remark,
-            ]);
-
-    }
-
-
-    public function passMember(ApprovalFlowInstanceNodeRelatedMember $related_member, $remark = null)
-    {
-        switch ($related_member->status) {
-            case ApprovalFlowInstanceNodeRelatedMember::STATUS_UN_OPERATE:
-                DB::transaction(function () use ($related_member,$remark) {
-                    $related_member->update([
-                        "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS,
-                        "operate_time" => date('Y-m-d H:i:s'),
-                        "remark" => $remark
-                    ]);
-                    $this->obj_service_operate_record->createOperateRecord(
-                        $related_member->node_id,
-                        $related_member->instance_id,
-                        $related_member->id,
-                        ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS,
-                        $remark
-                    );
-                    return $related_member;
-                });
-                break;
-            case ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS:
-                //已通过的不再操作
-                break;
-            case ApprovalFlowInstanceNodeRelatedMember::STATUS_REFUSE:
-                //拒绝与撤销的都不应该继续操作
-            case ApprovalFlowInstanceNodeRelatedMember::STATUS_WITHDRAW:
-                throw new ApprovalFlowException("已完成操作，请勿重复");
-                break;
-            default:
-                throw new ApprovalFlowException("未知的人员状态:{$related_member->status}");
-        }
-
-
-    }
 
 
 }

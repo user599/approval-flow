@@ -36,6 +36,8 @@ abstract class AbstractNode
      */
     protected $name;
 
+    protected $pass_time;
+
     /**
      * @var ApprovalFlowInstanceNode 雄辩模型
      */
@@ -105,7 +107,7 @@ abstract class AbstractNode
         if ($this->canContinueExecute($context)) {
             //记录当前节点为已执行节点
             $context->setExecutedNode($this);
-
+            $this->setPassTime(date('Y-m-d H:i:s'));
             //若还有下个节点则继续执行
             if (!empty($this->next_node)) {
                 $this->next_node->execute($context);
@@ -114,11 +116,10 @@ abstract class AbstractNode
                 $approvalFlowInstance = $context->getApprovalFlowInstance();
                 $approvalFlowInstance->end_time = date('Y-m-d H:i:s');
                 $approvalFlowInstance->status = ApprovalFlowInstance::STATUS_END;
-                $approvalFlowInstance->save();
             }
-        } else {
-            $context->getApprovalFlowInstance()->save();
         }
+        //保存各类操作信息
+        $context->getApprovalFlowInstance()->push();
     }
 
     /**
@@ -266,7 +267,23 @@ abstract class AbstractNode
         return $this;
     }
 
+    /**
+     * @return mixed
+     */
+    public function getPassTime()
+    {
+        return $this->pass_time;
+    }
 
+    /**
+     * @param mixed $pass_time
+     */
+    public function setPassTime($pass_time)
+    {
+        $this->pass_time = $pass_time;
+        $this->model->pass_time = $pass_time;
+        return $this;
+    }
 
 
     //endregion

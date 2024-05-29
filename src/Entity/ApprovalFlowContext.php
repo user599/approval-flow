@@ -168,8 +168,6 @@ class ApprovalFlowContext implements Arrayable, Jsonable, JsonSerializable
     {
         return DB::connection(config("approval-flow.db.connection"))
             ->transaction(function () {
-                throw_if($this->approval_flow_instance->status !== ApprovalFlowInstance::STATUS_NOT_START, ApprovalFlowException::class, "审批流已开始");
-                $this->approval_flow_instance->status = ApprovalFlowInstance::STATUS_RUNNING;
                 $this->getStartNode()->execute($this);
                 $this->approval_flow_instance->save();
                 return $this;

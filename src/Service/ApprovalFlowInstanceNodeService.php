@@ -91,29 +91,6 @@ class ApprovalFlowInstanceNodeService
 
     }
 
-    /**
-     * @explain:通过节点
-     * @param $node_id
-     * @param null $remark
-     * @author: wzm
-     * @date: 2024/5/24 15:36
-     * @remark:
-     */
-    public function passNode($node_id, $remark = null)
-    {
-        DB::transaction(function () use ($node_id, $remark) {
-            $this->obj_model_node
-                ->newQuery()
-                ->whereKey($node_id)
-                ->update([
-                    "pass_time" => date('Y-m-d H:i:s'),
-                    "remark" => $remark
-                ]);
-            $this->obj_service_related_member->passMemberByNodeId($node_id, $remark);
-
-        });
-    }
-
 
 
 }

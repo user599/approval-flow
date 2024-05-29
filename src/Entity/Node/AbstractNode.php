@@ -27,6 +27,11 @@ abstract class AbstractNode
     protected $id;
 
     /**
+     * @var int 数据库中的父级主键
+     */
+    protected $parent_id;
+
+    /**
      * @var string 节点名称
      */
     protected $name;
@@ -111,6 +116,8 @@ abstract class AbstractNode
                 $approvalFlowInstance->status = ApprovalFlowInstance::STATUS_END;
                 $approvalFlowInstance->save();
             }
+        } else {
+            $context->getApprovalFlowInstance()->save();
         }
     }
 
@@ -241,6 +248,25 @@ abstract class AbstractNode
         $this->post_interceptors[] = $post_interceptor;
         return $this;
     }
+
+    /**
+     * @return int
+     */
+    public function getParentId()
+    {
+        return $this->parent_id;
+    }
+
+    /**
+     * @param int $parent_id
+     */
+    public function setParentId($parent_id)
+    {
+        $this->parent_id = $parent_id;
+        return $this;
+    }
+
+
 
 
     //endregion

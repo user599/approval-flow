@@ -79,7 +79,8 @@ class ApprovalFlowInstanceNodeService
             "instance_id" => $instance_id,
             "parent_id" => $parent_id,
             "name" => $node_data["name"],
-            "node_type" => $node_data["node_type"],
+            "type" => $node_data["type"],
+            "metadata" => json_encode($node_data["metadata"]??null),
         ];
         $obj_node_instance = $this->obj_model_node->newQuery()->create($ary_insert_node_data);
         $this->obj_service_related_member->createRelatedMember($node_data["related_member"], $instance_id, $obj_node_instance->id);

@@ -19,6 +19,13 @@ return [
         "key" => env("APPROVAL_FLOW_AES_KEY"),
         "iv" => env("APPROVAL_FLOW_AES_IV"),
     ],
+
+    /**
+     * 数据库链接信息
+     */
+    "db" => [
+        "connection" => "mysql_approval_flow"
+    ],
     /**
      * 额外提供服务方法，可自行替换
      */

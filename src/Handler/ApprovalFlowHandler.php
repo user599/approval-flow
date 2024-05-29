@@ -35,13 +35,12 @@ interface ApprovalFlowHandler
      * @explain: 通过
      * @param $node_id
      * @param $remark
-     * @param $operate_time
      * @return ApprovalFlowContext
      * @author: wzm
      * @date: 2024/5/17 14:45
      * @remark:
      */
-    public function auditPass($node_id, $remark = null, $operate_time = null): ApprovalFlowContext;
+    public function auditPass($node_id, $remark = null);
 
     /**
      * @explain: 拒绝
@@ -52,7 +51,7 @@ interface ApprovalFlowHandler
      * @date: 2024/5/17 14:45
      * @remark:
      */
-    public function reject($node_id, $remark = null): ApprovalFlowContext;
+    public function reject($node_id, $remark = null);
 
     /**
      * @explain:撤销

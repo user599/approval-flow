@@ -6,6 +6,7 @@ namespace Js3\ApprovalFlow\Model;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Js3\ApprovalFlow\Entity\AuthInfo;
 
 /**
  * @explain:
@@ -22,6 +23,7 @@ class ApprovalFlowInstanceNodeRelatedMember extends AbstractApprovalFlowBaseMode
     const STATUS_UN_OPERATE = 0;
     const STATUS_PASS = 1;
     const STATUS_REFUSE = 2;
+    const STATUS_WITHDRAW = 3;
 
     /**
      * @explain: 所属实例
@@ -45,5 +47,10 @@ class ApprovalFlowInstanceNodeRelatedMember extends AbstractApprovalFlowBaseMode
     public function node()
     {
         return $this->belongsTo(ApprovalFlowInstanceNode::class, "instance_id");
+    }
+
+    public function scopeOfAuth($query,AuthInfo $authInfo) {
+        return $query->where("member_id",$authInfo->getAuthId())
+            ->where("member_type",$authInfo->getAuthType());
     }
 }

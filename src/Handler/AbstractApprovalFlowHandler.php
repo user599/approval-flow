@@ -4,6 +4,8 @@
 namespace Js3\ApprovalFlow\Handler;
 
 
+use App\Models\Admin\App;
+use App\Models\Api\City;
 use Illuminate\Support\Facades\DB;
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
 use Js3\ApprovalFlow\Entity\AuthInfo;
@@ -12,6 +14,7 @@ use Js3\ApprovalFlow\Entity\Node\CarbonCopyNode;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 use Js3\ApprovalFlow\HttpClient\HttpClient;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
+use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeRelatedMemberService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceService;
@@ -105,20 +108,19 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      */
     public function execute($instance_id, $args = []): ApprovalFlowContext
     {
-        return DB::transaction(function () use ($instance_id, $args) {
-            $obj_approval_flow_context = ApprovalFlowContext::getContextByInstanceId($instance_id);
-            $obj_approval_flow_context->setArgs($args);
-            $obj_approval_flow_context->startInstance();
-            //额外事件处理
-            foreach ($obj_approval_flow_context->getExecutedNodes() as $executedNode) {
-                if ($executedNode instanceof AuditNode) {
-                    $this->handleAuditExtraOperate($executedNode);
-                } elseif ($executedNode instanceof CarbonCopyNode) {
-                    $this->handleCarbonCopyExtraOperate($executedNode);
-                }
+        $obj_approval_flow_context = ApprovalFlowContext::getContextByInstanceId($instance_id, $this->auth_info);
+        $obj_approval_flow_context->setArgs($args);
+        $obj_approval_flow_context->startInstance();
+        //额外事件处理
+        foreach ($obj_approval_flow_context->getExecutedNodes() as $executedNode) {
+            if ($executedNode instanceof AuditNode) {
+                $this->handleAuditExtraOperate($executedNode);
+            } elseif ($executedNode instanceof CarbonCopyNode) {
+                $this->handleCarbonCopyExtraOperate($executedNode);
             }
-            return $obj_approval_flow_context;
-        });
+        }
+        return $obj_approval_flow_context;
+
 
     }
 
@@ -132,12 +134,11 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      * @date: 2024/5/20 9:41
      * @remark:
      */
-    public function auditPass($node_id, $remark = null, $operate_time = null): ApprovalFlowContext
+    public function auditPass($node_id, $remark = null)
     {
         $args = [
             "node_id" => $node_id,
             "remark" => $remark,
-            "operate_time" => empty($operate_time) ? date('Y-m-d H:i:s') : $operate_time
         ];
         return DB::transaction(function () use ($node_id, $args) {
             $obj_instance = $this->obj_service_af_node->findById($node_id)->instance ?? null;
@@ -174,15 +175,22 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      * @date: 2024/5/20 9:41
      * @remark:
      */
-    public function reject($node_id, $remark = null): ApprovalFlowContext
+    public function reject($node_id, $remark = null)
     {
         return DB::transaction(function () use ($node_id, $remark) {
-            $obj_instance = $this->obj_service_af_node->findById($node_id)->instance ?? null;
-            throw_if(empty($obj_instance), ApprovalFlowException::class, "未知的审批流信息，请重试");
-            throw_if($obj_instance->status != ApprovalFlowInstance::STATUS_RUNNING, ApprovalFlowException::class, "审批流未开始或已结束");
+            $obj_node = $this->obj_service_af_node->findById($node_id)->instance ?? null;
+            throw_if(empty($obj_node), ApprovalFlowException::class, "未知的审批流信息，请重试");
+            throw_if($obj_node->instance->status != ApprovalFlowInstance::STATUS_RUNNING, ApprovalFlowException::class, "审批流未开始或已结束");
             /**
              *
              */
+            switch ($obj_node->reject_type) {
+                case ApprovalFlowInstanceNode::REJECT_TYPE_REJECT_TO_PRE_APPROVE:
+                    //驳回到上一审批节点
+                    //查找一审批节点
+
+                    //直接结束
+            }
             return null;
         });
     }
@@ -206,7 +214,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
             switch ($obj_withdraw_type = $obj_approval_flow_instance->withdraw_type) {
                 case ApprovalFlowInstance::WITHDRAW_TYPE_NOT_IN_PROGRESS:
                     //未进入流程时撤回：未开始，开始但未审核
-                    if (!in_array($obj_approval_flow_instance->status ,[ApprovalFlowInstance::STATUS_NOT_START, ApprovalFlowInstance::STATUS_RUNNING])
+                    if (!in_array($obj_approval_flow_instance->status, [ApprovalFlowInstance::STATUS_NOT_START, ApprovalFlowInstance::STATUS_RUNNING])
                         || $obj_approval_flow_instance->has_audit != ApprovalFlowInstance::HAS_AUDIT_FALSE
                     ) {
                         throw new ApprovalFlowException("该审批流已进入流程，禁止撤回");

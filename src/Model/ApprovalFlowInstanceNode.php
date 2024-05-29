@@ -26,8 +26,24 @@ class ApprovalFlowInstanceNode extends AbstractApprovalFlowBaseModel
      */
     const NODE_TYPE_APPLY = 1;
     const NODE_TYPE_BRANCH = 2;
-    const NODE_TYPE_CARBON_COPY = 3;
-    const NODE_TYPE_AUDIT = 4;
+    const NODE_TYPE_AUDIT = 3;
+    const NODE_TYPE_CARBON_COPY = 4;
+
+    /**
+     * 审批类型：
+     * 或签
+     * 会签
+     */
+    const APPROVE_TYPE_OR = 1;
+    const APPROVE_TYPE_UNION = 2;
+
+    /**
+     * 驳回类型
+     * 驳回即结束
+     * 驳回至上一审批
+     */
+    const REJECT_TYPE_REJECT_TO_END = 1;
+    const REJECT_TYPE_REJECT_TO_PRE_APPROVE = 2;
 
     /**
      * @explain:所属实例

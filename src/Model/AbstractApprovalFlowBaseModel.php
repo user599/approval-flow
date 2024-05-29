@@ -16,7 +16,10 @@ class AbstractApprovalFlowBaseModel extends Model
 {
     use SoftDeletes;
 
-    //TODO 开发时使用，后续需要删除
-    protected $connection = "mysql_approval_flow";
+    public function getConnectionName()
+    {
+        return config("approval-flow.db.connection");
+    }
+
 
 }

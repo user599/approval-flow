@@ -7,6 +7,7 @@ namespace Js3\ApprovalFlow\Service;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Js3\ApprovalFlow\Entity\AuthInfo;
+use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeOperator;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeRelatedMember;
 
@@ -70,8 +71,8 @@ class ApprovalFlowInstanceNodeRelatedMemberService
             $ary_insert_operator_data = [
                 "node_id" => $node_id,
                 "instance_id" => $instance_id,
-                "operator_id" => $operator_data["operator_id"],
-                "operator_type" => $operator_data["operator_type"],
+                "member_id" => $operator_data["member_id"],
+                "member_type" => $operator_data["member_type"],
                 "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_UN_OPERATE
             ];
             $this->obj_model_related_member->newQuery()->create($ary_insert_operator_data);
@@ -97,34 +98,40 @@ class ApprovalFlowInstanceNodeRelatedMemberService
 
     }
 
-    /**
-     * @explain: 基于用户信息通过人员
-     * @param AuthInfo $auth_info
-     * @author: wzm
-     * @date: 2024/5/24 15:56
-     * @remark: 会记录一份通过信息
-     */
-    public function passMemberByAuthInfo(AuthInfo $auth_info, $remark = null)
+
+    public function passMember(ApprovalFlowInstanceNodeRelatedMember $related_member, $remark = null)
     {
-        DB::transaction(function () use ($auth_info, $remark) {
-            $related_member = $this->obj_model_related_member->newQuery()
-                ->where("member_id", $auth_info->getAuthId())
-                ->where("member_type", $auth_info->getAuthType())
-                ->findOrFail();
-            $related_member->update([
-                "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS,
-                "operate_time" => date('Y-m-d H:i:s'),
-                "remark" => $remark
-            ]);
-            $this->obj_service_operate_record->createOperateRecord(
-                $related_member->node_id,
-                $related_member->instance_id,
-                $related_member->id,
-                ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS,
-                $remark
-            );
-            return $related_member;
-        });
+        switch ($related_member->status) {
+            case ApprovalFlowInstanceNodeRelatedMember::STATUS_UN_OPERATE:
+                DB::transaction(function () use ($related_member,$remark) {
+                    $related_member->update([
+                        "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS,
+                        "operate_time" => date('Y-m-d H:i:s'),
+                        "remark" => $remark
+                    ]);
+                    $this->obj_service_operate_record->createOperateRecord(
+                        $related_member->node_id,
+                        $related_member->instance_id,
+                        $related_member->id,
+                        ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS,
+                        $remark
+                    );
+                    return $related_member;
+                });
+                break;
+            case ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS:
+                //已通过的不再操作
+                break;
+            case ApprovalFlowInstanceNodeRelatedMember::STATUS_REFUSE:
+                //拒绝与撤销的都不应该继续操作
+            case ApprovalFlowInstanceNodeRelatedMember::STATUS_WITHDRAW:
+                throw new ApprovalFlowException("已完成操作，请勿重复");
+                break;
+            default:
+                throw new ApprovalFlowException("未知的人员状态:{$related_member->status}");
+        }
+
+
     }
 
 

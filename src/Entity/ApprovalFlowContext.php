@@ -4,19 +4,23 @@
 namespace Js3\ApprovalFlow\Entity;
 
 
+use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Contracts\Support\Jsonable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Js3\ApprovalFlow\Entity\Node\AbstractNode;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
 use Js3\ApprovalFlow\Parser\NodeParseable;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceService;
+use JsonSerializable;
 
 /**
  * @explain: 审批流执行器
  * @author: wzm
  * @date: 2024/5/14 16:30
  */
-class ApprovalFlowContext
+class ApprovalFlowContext implements Arrayable, Jsonable, JsonSerializable
 {
 
     /**
@@ -25,7 +29,7 @@ class ApprovalFlowContext
     private $approval_flow_instance;
 
     /**
-     * @var array<AbstractNode> 节点列表
+     * @var Collection<AbstractNode> 节点列表
      */
     private $node_list;
 
@@ -49,11 +53,13 @@ class ApprovalFlowContext
      */
     private $auth_info;
 
+
     /**
      * 私有化构造函数保证只能通过指定方法实例化
      */
     private function __construct()
     {
+        $this->node_list = new Collection([]);
 
     }
 
@@ -68,10 +74,15 @@ class ApprovalFlowContext
      * @date: 2024/5/20 17:02
      * @remark:
      */
-    public static function storeApprovalFlowInstance(array $approval_data,AuthInfo $auth_info)
+    public static function storeApprovalFlowInstance(array $approval_data, AuthInfo $auth_info)
     {
-        $obj_instance = app(ApprovalFlowInstanceService::class)->saveInstance($approval_data,$auth_info);
-        return self::getContextByInstance($obj_instance,$auth_info);
+        return DB::connection(config("approval-flow.db.connection"))
+            ->transaction(
+                function () use ($approval_data, $auth_info) {
+                    $obj_instance = app(ApprovalFlowInstanceService::class)->saveInstance($approval_data, $auth_info);
+                    return self::getContextByInstance($obj_instance, $auth_info);
+                }
+            );
     }
 
     /**
@@ -84,10 +95,10 @@ class ApprovalFlowContext
      * @date: 2024/5/20 17:02
      * @remark:
      */
-    public static function getContextByInstanceId($int_instance_id,AuthInfo $auth_info)
+    public static function getContextByInstanceId($int_instance_id, AuthInfo $auth_info)
     {
-        $obj_instance = app(ApprovalFlowInstanceService::class)->obj_service_af_instance->findById($int_instance_id);
-        return self::getContextByInstance($obj_instance,$auth_info);
+        $obj_instance = app(ApprovalFlowInstanceService::class)->findById($int_instance_id);
+        return self::getContextByInstance($obj_instance, $auth_info);
     }
 
 
@@ -101,12 +112,13 @@ class ApprovalFlowContext
      * @date: 2024/5/20 17:02
      * @remark:
      */
-    public static function getContextByInstance(ApprovalFlowInstance $obj_instance,?AuthInfo $auth_info)
+    public static function getContextByInstance(ApprovalFlowInstance $obj_instance, ?AuthInfo $auth_info)
     {
-        $obj_instance = $obj_instance->load(["nodes", "nodes.operators"]);
+        $obj_instance = $obj_instance->load(["nodes", "nodes.relatedMembers"]);
         $approvalFlowContext = new self();
         $approvalFlowContext->setAuthInfo($auth_info);
         $approvalFlowContext->setApprovalFlowInstance($obj_instance);
+        //使用节点格式化器格式化节点内容
         foreach ($obj_instance->nodes as $model_node) {
             $parse_clazz = NodeParseable::NODE_PARSER_MAP[$model_node->type] ?? null;
             if (empty($parse_clazz)) {
@@ -120,15 +132,18 @@ class ApprovalFlowContext
             }
             $parser->parseModelToNode($model_node);
             $node = $parser->getNode();
-            $approvalFlowContext->node_list[] = $node;
+            //添加后置拦截器
+            $approvalFlowContext->node_list->add($node);
         }
 
         /**
          * 构建节点关系
          */
         //O(2n)降低复杂度
-        $ary_node_key_by_parent_id = array_column($approvalFlowContext->node_list, null, 'parent_id');
-        foreach ($approvalFlowContext->node_list as $node) {
+        $ary_node_key_by_parent_id = $approvalFlowContext->node_list->keyBy(function ($item) {
+            return $item->getParentId();
+        })->toArray();
+        foreach ($approvalFlowContext->node_list as &$node) {
             $curr_node_id = $node->getId();
             //设置当前节点
             if ($curr_node_id == $obj_instance->current_node_id) {
@@ -151,12 +166,14 @@ class ApprovalFlowContext
      */
     public function startInstance()
     {
-        DB::transaction(function () {
-            throw_if($this->approval_flow_instance->status !== ApprovalFlowInstance::STATUS_NOT_START, ApprovalFlowException::class,"审批流已开始");
-            $this->approval_flow_instance->status = ApprovalFlowInstance::STATUS_RUNNING;
-            $this->getStartNode()->execute($this);
-            $this->approval_flow_instance->save();
-        });
+        return DB::connection(config("approval-flow.db.connection"))
+            ->transaction(function () {
+                throw_if($this->approval_flow_instance->status !== ApprovalFlowInstance::STATUS_NOT_START, ApprovalFlowException::class, "审批流已开始");
+                $this->approval_flow_instance->status = ApprovalFlowInstance::STATUS_RUNNING;
+                $this->getStartNode()->execute($this);
+                $this->approval_flow_instance->save();
+                return $this;
+            });
     }
 
 
@@ -167,7 +184,7 @@ class ApprovalFlowContext
      * @date: 2024/5/21 14:07
      * @remark:
      */
-    public function getStartNode() : AbstractNode
+    public function getStartNode(): AbstractNode
     {
         return $this->node_list[0];
     }
@@ -188,6 +205,7 @@ class ApprovalFlowContext
      */
     public function setCurrentNode(AbstractNode $current_node): ApprovalFlowContext
     {
+        $this->approval_flow_instance->current_node_id = $current_node->getId();
         $this->current_node = $current_node;
         return $this;
     }
@@ -241,21 +259,11 @@ class ApprovalFlowContext
     }
 
     /**
-     * @return AbstractNode[]
+     * @return Collection<AbstractNode>
      */
-    public function getNodeList(): array
+    public function getNodeList(): Collection
     {
         return $this->node_list;
-    }
-
-    /**
-     * @param AbstractNode[] $node_list
-     * @return ApprovalFlowContext
-     */
-    public function setNodeList(array $node_list): ApprovalFlowContext
-    {
-        $this->node_list = $node_list;
-        return $this;
     }
 
     /**
@@ -274,6 +282,40 @@ class ApprovalFlowContext
     {
         $this->auth_info = $auth_info;
         return $this;
+    }
+
+
+    /**
+     * @explain:格式化方法
+     * @return array
+     * @author: wzm
+     * @date: 2024/5/29 14:54
+     * @remark:
+     */
+    public function toArray()
+    {
+        return [
+            "instance" => $this->getApprovalFlowInstance(),
+            "current_node" => $this->getCurrentNode(),
+            "node_list" => $this->getNodeList()->toArray(),
+        ];
+    }
+
+    public function jsonSerialize()
+    {
+        return $this->toArray();
+    }
+
+    public function toJson($options = 0)
+    {
+        $json = json_encode($this->jsonSerialize(), $options);
+
+        return $json;
+    }
+
+    public function __toString()
+    {
+        return $this->toJson();
     }
 
 

@@ -172,7 +172,6 @@ class HttpClient
                 /** @var PromiseInterface $promise */
                 $promise = $handler($request, $options);
                 return $promise->then(function (ResponseInterface $response) {
-
                     $response_body = $this->formatResponse($response);
                     if (
                         $response->getStatusCode() >= 400

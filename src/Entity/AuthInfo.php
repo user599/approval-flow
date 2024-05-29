@@ -106,6 +106,8 @@ class AuthInfo implements Arrayable,Jsonable,JsonSerializable
      * @remark:
      */
     public function isSameMember($auth_id,$auth_type):bool {
+        dump($auth_id,$this->getAuthId() , $auth_type , $this->getAuthType());
+        dump("====================");
         return $auth_id == $this->getAuthId() && $auth_type == $this->getAuthType();
     }
 

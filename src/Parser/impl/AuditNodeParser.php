@@ -33,13 +33,13 @@ class AuditNodeParser extends AbstractNodeParser
      */
     protected function parseExtra(AbstractNode $node, Model $model)
     {
-
-        return $node->setAuditType($model->audit_type)
-            ->setRejectType($model->reject_type)
-            ->setOtherOperate($model->other_operate)
-            ->setOperateMethod($model->operate_method)
-            ->setApprovedWhenSameWithApplicant($model->approved_when_same_with_applicant)
-            ->setApprovedWhenSameWithHistory($model->approved_when_same_with_history)
+        $ary_metadata = json_decode($model->metadata,true);
+        return $node->setApproveType($ary_metadata['approve_type']??null)
+            ->setRejectType($ary_metadata['reject_type']??null)
+            ->setOtherOperate($ary_metadata['other_operate']??null)
+            ->setOperateMethod($ary_metadata['operate_method']??null)
+            ->setApprovedWhenSameWithApplicant($ary_metadata['approved_when_same_with_applicant']??null)
+            ->setApprovedWhenSameWithHistory($ary_metadata['approved_when_same_with_history']??null)
             ->setAuditors($model->relatedMembers)
             ;
 

@@ -46,6 +46,7 @@ class ApprovalFlowInstanceNodeOperateRecordService
             "node_id" => $node_id,
             "instance_id" => $instance_id,
             "related_member_id" => $related_member_id,
+            "operate_time"=> date('Y-m-d H:i:s'),
             "status" => $status,
             "remark" => $remark
         ]);

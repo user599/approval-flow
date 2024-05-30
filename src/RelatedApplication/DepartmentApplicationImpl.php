@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Js3\ApprovalFlow\Generators;
+namespace Js3\ApprovalFlow\RelatedApplication;
 
 
 use Js3\ApprovalFlow\Entity\AuthInfo;
@@ -11,7 +11,7 @@ use Js3\ApprovalFlow\Entity\AuthInfo;
  * @author: wzm
  * @date: 2024/5/17 15:58
  */
-class DepartmentApplicationGeneratorImpl implements RelateApplicationGenerator
+class DepartmentApplicationImpl implements RelatedApplication
 {
 
     private $ary_demo = [

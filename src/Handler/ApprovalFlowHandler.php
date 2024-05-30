@@ -51,7 +51,7 @@ interface ApprovalFlowHandler
      * @date: 2024/5/17 14:45
      * @remark:
      */
-    public function reject($node_id, $remark = null);
+    public function refuse($node_id, $remark = null);
 
     /**
      * @explain:撤销

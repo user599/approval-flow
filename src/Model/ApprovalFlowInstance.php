@@ -19,12 +19,13 @@ class ApprovalFlowInstance extends AbstractApprovalFlowBaseModel
     protected $guarded = [];
 
     /**
-     * 实例状态：1：未开始，2：进行中，3：结束，4：撤销
+     * 实例状态：1：未开始，2：进行中，3：结束，4：撤销 5:拒绝
      */
     const STATUS_NOT_START = 1;
     const STATUS_RUNNING = 2;
     const STATUS_END = 3;
     const STATUS_WITHDRAW = 4;
+    const STATUS_REFUSE = 5;
 
     /**
      * 撤回类型 1 未进入流程时 2流程中 3 流程结束时

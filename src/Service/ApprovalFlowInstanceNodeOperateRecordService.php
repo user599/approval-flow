@@ -19,7 +19,7 @@ class ApprovalFlowInstanceNodeOperateRecordService
     /**
      * @var ApprovalFlowInstanceNodeOperateRecord
      */
-    private $obj_model_operate_record;
+    protected $obj_model_operate_record;
 
     /**
      * @param ApprovalFlowInstanceNodeOperateRecord $obj_model_operate_record

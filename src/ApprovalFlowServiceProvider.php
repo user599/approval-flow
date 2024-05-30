@@ -11,7 +11,7 @@ use Illuminate\Support\Fluent;
 use Illuminate\Support\ServiceProvider;
 use Js3\ApprovalFlow\Encrypter\AesEncrypter;
 use Js3\ApprovalFlow\Encrypter\Encrypter;
-use Js3\ApprovalFlow\Generators\RelateApplicationFactory;
+use Js3\ApprovalFlow\RelatedApplication\RelatedApplicationFactory;
 use Js3\ApprovalFlow\HttpClient\HttpClient;
 
 /**
@@ -71,7 +71,7 @@ class ApprovalFlowServiceProvider extends ServiceProvider
         $this->addCommentTableMethodWhenMigration();
 
         //注册关联应用
-        $this->registerRelateApplication();
+        $this->registerRelatedApplication();
 
     }
 
@@ -139,9 +139,9 @@ class ApprovalFlowServiceProvider extends ServiceProvider
      * @date: 2024/5/20 9:06
      * @remark:
      */
-    private function registerRelateApplication() {
-        foreach ($this->getConfig("relate-application",[]) as $slug => $generator_clazz) {
-            RelateApplicationFactory::register($slug,$generator_clazz);
+    private function registerRelatedApplication() {
+        foreach ($this->getConfig("related-application",[]) as $slug => $related_application_clazz) {
+            RelatedApplicationFactory::register($slug,$related_application_clazz);
         }
     }
 

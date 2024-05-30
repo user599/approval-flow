@@ -15,7 +15,7 @@ Route::prefix("api/approval-flow")->middleware(["api"])->group(function () {
     /**
      * 关联应用相关
      */
-    Route::prefix("related-application")->group(function() {
+    Route::middleware([\Js3\ApprovalFlow\Middleware\CheckApprovalFlowAuthMiddleware::class])->prefix("related-application")->group(function() {
         Route::get("{slug}","\Js3\ApprovalFlow\Controller\ApprovalFlowRelatedApplicationController@getOptions");
         Route::get("{slug}/{id}","\Js3\ApprovalFlow\Controller\ApprovalFlowRelatedApplicationController@getChildren");
 

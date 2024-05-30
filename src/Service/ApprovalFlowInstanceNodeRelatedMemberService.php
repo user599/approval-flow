@@ -22,9 +22,12 @@ class ApprovalFlowInstanceNodeRelatedMemberService
     /**
      * @var ApprovalFlowInstanceNodeRelatedMember
      */
-    private $obj_model_related_member;
+    protected $obj_model_related_member;
 
-    private $obj_service_operate_record;
+    /**
+     * @var ApprovalFlowInstanceNodeOperateRecordService
+     */
+    protected $obj_service_operate_record;
 
     /**
      * @param ApprovalFlowInstanceNodeRelatedMember $obj_model_related_member

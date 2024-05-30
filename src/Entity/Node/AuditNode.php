@@ -7,6 +7,7 @@ namespace Js3\ApprovalFlow\Entity\Node;
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
 use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
+use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeOperateRecord;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeOperator;
@@ -91,9 +92,14 @@ class AuditNode extends AbstractNode
                 }
             }
         }
-        foreach ($ary_auto_pass_member as $member) {
-            $this->autoPassMember($member);
+        if (!empty($ary_auto_pass_member)) {
+            //设置已被审批过
+            $context->getApprovalFlowInstance()->has_audit = ApprovalFlowInstance::HAS_AUDIT_TRUE;
+            foreach ($ary_auto_pass_member as $member) {
+                $this->autoPassMember($member);
+            }
         }
+
     }
 
     /**
@@ -210,7 +216,7 @@ class AuditNode extends AbstractNode
                 'remark' => '审批节点满足自动通过条件'
             ]);
             $member->operateRecords()->save($operate_record);
-        } elseif(in_array($member->status,[ApprovalFlowInstanceNodeRelatedMember::STATUS_REFUSE,ApprovalFlowInstanceNodeRelatedMember::STATUS_WITHDRAW])) {
+        } elseif(in_array($member->status,[ApprovalFlowInstanceNodeRelatedMember::STATUS_REJECT,ApprovalFlowInstanceNodeRelatedMember::STATUS_WITHDRAW])) {
             //对于拒绝，撤回的抛出异常
             throw new ApprovalFlowException("该人员当前状态为[{$member->status}]，无法自动通过");
         }

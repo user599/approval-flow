@@ -24,7 +24,7 @@ interface NodeParseable
      */
     const NODE_PARSER_MAP = [
         ApprovalFlowInstanceNode::NODE_TYPE_APPLY => ApplyNodeParser::class,
-        ApprovalFlowInstanceNode::NODE_TYPE_AUDIT => AuditNodeParser::class,
+        ApprovalFlowInstanceNode::NODE_TYPE_APPROVE => AuditNodeParser::class,
         ApprovalFlowInstanceNode::NODE_TYPE_CARBON_COPY => CarbonCopyNodeParser::class,
     ];
 

@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
+use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
+use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeRelatedMember;
 
 /**
  * @explain:
@@ -21,12 +23,12 @@ class ApprovalFlowInstanceService
     /**
      * @var ApprovalFlowInstance
      */
-    private $obj_model_instance;
+    protected $obj_model_instance;
 
     /**
      * @var ApprovalFlowInstanceNodeService
      */
-    private $obj_service_instance_node;
+    protected $obj_service_instance_node;
 
     /**
      * @param ApprovalFlowInstance $obj_model_approval_flow_instance
@@ -85,5 +87,120 @@ class ApprovalFlowInstanceService
         return $obj_instance;
     }
 
+    /**
+     * @explain: 审批拒绝
+     * @param $node_id
+     * @param AuthInfo $operate_auth_info
+     * @param $remark
+     * @return mixed|void
+     * @author: wzm
+     * @date: 2024/5/30 14:46
+     * @remark:
+     */
+    public function refuseByNodeId($node_id, AuthInfo $operate_auth_info, $remark = null)
+    {
+        return DB::transaction(function () use ($node_id, $operate_auth_info, $remark) {
+            list($obj_instance, $current_node, $current_related_member) = $this->preHandleRejectInfo($node_id, $operate_auth_info);
+            //添加一条当前人员的拒绝记录
+            $current_related_member->operateRecords()->create([
+                "instance_id" => $current_related_member->instance_id,
+                "node_id" => $current_related_member->node_id,
+                "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_REJECT,
+                "operate_time" => date('Y-m-d H:i:s'),
+                "remark" => $remark
+            ]);
 
+            //是否驳回到上一审核节点
+            if ($current_node->reject_type == ApprovalFlowInstanceNode::REJECT_TYPE_REJECT_TO_PRE_APPROVE) {
+                //获取上一级审核节点
+                $node_group_by_parent_id = $obj_instance->nodes->keyBy("parent_id");
+                $pre_node = $current_node;
+                $ary_rollback_node_info = [];
+                while (!empty($pre_node = $node_group_by_parent_id[$pre_node->id])) {
+                    $ary_rollback_node_info[] = $pre_node;
+                    if ($pre_node->type == ApprovalFlowInstanceNode::NODE_TYPE_APPROVE) {
+                        break;
+                    }
+                }
+            }
+            //判断上级审核节点是否存在
+            if (!empty($pre_node)) {
+                /**
+                 * 则将从该节点开始的所有节点状态为未操作
+                 * 将所有相关人设置为未操作
+                 */
+                foreach ($ary_rollback_node_info as $node) {
+                    $node->relatedMembers()->update([
+                        "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_UN_OPERATE,
+                        "operate_time" => null
+                    ]);
+                    $node->status = ApprovalFlowInstanceNode::NODE_STATUS_UN_OPERATE;
+                    $node->pass_time = null;
+                    $node->remark = null;
+                    $node->save();
+                }
+            } else {
+                //若节点为拒绝即结束，或者没有上级审批节点，则直接结束
+                //结束当前实例
+                $this->endInstance($obj_instance->id, $remark);
+            }
+            $obj_instance->save();
+
+
+        });
+    }
+
+    /**
+     * @explain: 预处理拒绝信息
+     * @param $node_id      节点id
+     * @param AuthInfo $operate_auth_info 当前操作人信息
+     * @return array
+     * @throws ApprovalFlowException
+     * @author: wzm
+     * @date: 2024/5/30 15:06
+     * @remark:
+     */
+    private function preHandleRejectInfo($node_id, AuthInfo $operate_auth_info)
+    {
+        $obj_node = $this->obj_service_instance_node->findById($node_id);
+        $obj_instance = $obj_node->instance ?? null;
+
+        $current_node = $obj_instance->currentNode;
+        //当前节点、实例必须正常
+        if (
+            empty($obj_instance)
+            || $obj_instance->status != ApprovalFlowInstance::STATUS_RUNNING
+            || $current_node->type != ApprovalFlowInstanceNode::NODE_TYPE_APPROVE
+        ) {
+            throw new ApprovalFlowException("当前审批流数据已更新，请刷新后操作");
+        }
+
+        //查找当前操作人
+        try {
+            /** @var ApprovalFlowInstanceNodeRelatedMember $current_related_member */
+            $current_related_member = $current_node->relatedMembers
+                ->ofAuth($operate_auth_info)
+                ->firstOrFail();
+        } catch (\Exception $e) {
+            throw new ApprovalFlowException("当前人员无法执行驳回操作");
+        }
+        $obj_instance->load(["nodes"]);
+        return [
+            $obj_instance, $current_node, $current_related_member
+        ];
+
+    }
+
+
+    public function endInstance($instance_id, $remark = null)
+    {
+        $this->obj_model_instance->newQuery()
+            ->where("id", $instance_id)
+            ->update([
+                "status" => ApprovalFlowInstance::STATUS_END,
+                "end_time" => date('Y-m-d H:i:s'),
+                "remark" => $remark
+            ]);
+
+    }
 }

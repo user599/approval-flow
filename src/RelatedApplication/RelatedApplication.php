@@ -1,6 +1,6 @@
 <?php
 
-namespace Js3\ApprovalFlow\Generators;
+namespace Js3\ApprovalFlow\RelatedApplication;
 
 use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Entity\SelectOptions;
@@ -15,7 +15,7 @@ use Js3\ApprovalFlow\Entity\SelectOptions;
  *          eg:   "demo-department"=> \Js3\ApprovalFlow\Generators\DepartmentApplicationGeneratorImpl::class
  *
  */
-interface RelateApplicationGenerator
+interface RelatedApplication
 {
 
     /**

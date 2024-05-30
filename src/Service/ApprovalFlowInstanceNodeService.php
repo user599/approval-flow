@@ -5,10 +5,6 @@ namespace Js3\ApprovalFlow\Service;
 
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\DB;
-use Js3\ApprovalFlow\Entity\AuthInfo;
-use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
-use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
 
 /**
@@ -20,11 +16,14 @@ class ApprovalFlowInstanceNodeService
 {
 
     /**
-     * @var ApprovalFlowInstanceNodeOperatorService
+     * @var ApprovalFlowInstanceNodeRelatedMemberService
      */
-    private $obj_service_related_member;
+    protected $obj_service_related_member;
 
-    private $obj_service_operate_record;
+    /**
+     * @var ApprovalFlowInstanceNodeOperateRecordService
+     */
+    protected $obj_service_operate_record;
 
     /**
      * @var ApprovalFlowInstanceNode
@@ -32,7 +31,7 @@ class ApprovalFlowInstanceNodeService
     private $obj_model_node;
 
     /**
-     * @param ApprovalFlowInstanceNodeOperatorService $obj_service_related_member
+     * @param ApprovalFlowInstanceNodeRelatedMemberService $obj_service_related_member
      * @param ApprovalFlowInstanceNode $obj_model_node
      */
     public function __construct(
@@ -73,7 +72,7 @@ class ApprovalFlowInstanceNodeService
      * @date: 2024/5/24 14:09
      * @remark:
      */
-    public function createNode(array $node_data, $instance_id, $parent_id = null)
+    public function createNode(array $node_data, $instance_id, $parent_id = null,$parent_node_path = null)
     {
         $ary_insert_node_data = [
             "instance_id" => $instance_id,
@@ -90,6 +89,7 @@ class ApprovalFlowInstanceNodeService
         return $obj_node_instance;
 
     }
+
 
 
 

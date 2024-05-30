@@ -4,8 +4,6 @@
 namespace Js3\ApprovalFlow\Handler;
 
 
-use App\Models\Admin\App;
-use App\Models\Api\City;
 use Illuminate\Support\Facades\DB;
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
 use Js3\ApprovalFlow\Entity\AuthInfo;
@@ -141,7 +139,8 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
             "remark" => $remark,
         ];
         return DB::transaction(function () use ($node_id, $args) {
-            $obj_instance = $this->obj_service_af_node->findById($node_id)->instance ?? null;
+            $obj_node = $this->obj_service_af_node->findById($node_id);
+            $obj_instance = $obj_node->instance ?? null;
             throw_if(empty($obj_instance), ApprovalFlowException::class, "未知的审批流信息，请重试");
             throw_if($obj_instance->status != ApprovalFlowInstance::STATUS_RUNNING, ApprovalFlowException::class, "审批流未开始或已结束");
 
@@ -175,24 +174,9 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      * @date: 2024/5/20 9:41
      * @remark:
      */
-    public function reject($node_id, $remark = null)
+    public function auditRefuse($node_id, $remark = null)
     {
-        return DB::transaction(function () use ($node_id, $remark) {
-            $obj_node = $this->obj_service_af_node->findById($node_id)->instance ?? null;
-            throw_if(empty($obj_node), ApprovalFlowException::class, "未知的审批流信息，请重试");
-            throw_if($obj_node->instance->status != ApprovalFlowInstance::STATUS_RUNNING, ApprovalFlowException::class, "审批流未开始或已结束");
-            /**
-             *
-             */
-            switch ($obj_node->reject_type) {
-                case ApprovalFlowInstanceNode::REJECT_TYPE_REJECT_TO_PRE_APPROVE:
-                    //驳回到上一审批节点
-                    //查找一审批节点
-
-                    //直接结束
-            }
-            return null;
-        });
+        return $this->obj_service_af_instance->refuseByNodeId($node_id, $this->auth_info, $remark);
     }
 
     /**
@@ -242,14 +226,14 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     /**
      * @explain: 获取当前审批流状态
      * @param $instance_id
-     * @return ApprovalFlowInstance
+     * @return mixed
      * @author: wzm
      * @date: 2024/5/20 9:42
      * @remark:
      */
     public function getStatus($instance_id)
     {
-        return ApprovalFlowContext::getContextByInstanceId($instance_id,$this->auth_info);
+        return ApprovalFlowContext::getContextByInstanceId($instance_id, $this->auth_info);
     }
 
     /**

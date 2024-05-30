@@ -22,7 +22,7 @@ class ApprovalFlowInstanceNodeRelatedMember extends AbstractApprovalFlowBaseMode
 
     const STATUS_UN_OPERATE = 0;
     const STATUS_PASS = 1;
-    const STATUS_REFUSE = 2;
+    const STATUS_REJECT = 2;
     const STATUS_WITHDRAW = 3;
 
     /**
@@ -49,10 +49,26 @@ class ApprovalFlowInstanceNodeRelatedMember extends AbstractApprovalFlowBaseMode
         return $this->belongsTo(ApprovalFlowInstanceNode::class, "instance_id");
     }
 
+    /**
+     * @explain: 操作记录
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @author: wzm
+     * @date: 2024/5/30 14:41
+     * @remark:
+     */
     public function operateRecords() {
         return $this->hasMany(ApprovalFlowInstanceNodeOperateRecord::class,"related_member_id");
     }
 
+    /**
+     * @explain: 局部作用域，基于身份信息查询
+     * @param $query
+     * @param AuthInfo $authInfo
+     * @return mixed
+     * @author: wzm
+     * @date: 2024/5/30 14:41
+     * @remark: newQuery()->ofAuth($auth_info)->get()
+     */
     public function scopeOfAuth($query,AuthInfo $authInfo) {
         return $query->where("member_id",$authInfo->getAuthId())
             ->where("member_type",$authInfo->getAuthType());

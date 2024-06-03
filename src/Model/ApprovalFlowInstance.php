@@ -55,14 +55,14 @@ class ApprovalFlowInstance extends AbstractApprovalFlowBaseModel
     }
 
     /**
-     * @explain:当前节点
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     * @explain: 当前节点
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      * @author: wzm
-     * @date: 2024/5/23 15:28
+     * @date: 2024/6/3 10:47
      * @remark:
      */
     public function currentNode() {
-        return $this->belongsTo(ApprovalFlowNode::class,"current_node_id");
+        return $this->belongsTo(ApprovalFlowInstanceNode::class,"current_node_id");
     }
 
     /**
@@ -73,6 +73,6 @@ class ApprovalFlowInstance extends AbstractApprovalFlowBaseModel
      * @remark:
      */
     public function operateRecords() {
-        return $this->hasMany(ApprovalFlowInstanceOperateRecord::class,"instance_id");
+        return $this->hasMany(ApprovalFlowInstanceNodeOperateRecord::class,"instance_id");
     }
 }

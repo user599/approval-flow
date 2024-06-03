@@ -4,6 +4,7 @@ namespace Js3\ApprovalFlow\Handler;
 
 
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
+use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
 
 interface ApprovalFlowHandler
@@ -51,7 +52,7 @@ interface ApprovalFlowHandler
      * @date: 2024/5/17 14:45
      * @remark:
      */
-    public function refuse($node_id, $remark = null);
+    public function auditRefuse($node_id, $remark = null);
 
     /**
      * @explain:撤销
@@ -66,6 +67,18 @@ interface ApprovalFlowHandler
      * @return mixed
      */
     public function getStatus($instance_id);
+
+    /**
+     * @explain:向节点存入新成员
+     * @param $node_id 节点id
+     * @param array<AuthInfo> $ary_auth_info 要插入的用户数组-请格式化为 AuthInfo类
+     * @return mixed        插入的人员数量
+     * @throws \Throwable
+     * @author: wzm
+     * @date: 2024/6/3 10:11
+     * @remark: 若该人员已经在节点中，则该人员将会跳过
+     */
+    public function insertMember($node_id, array $ary_insert_auth_info);
 
 
 }

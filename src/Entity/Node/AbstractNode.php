@@ -5,9 +5,11 @@ namespace Js3\ApprovalFlow\Entity\Node;
 
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
+use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeRelatedMember;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeRelatedMemberService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceService;
@@ -36,7 +38,15 @@ abstract class AbstractNode
      */
     protected $name;
 
+    /**
+     * @var string 通过时间
+     */
     protected $pass_time;
+
+    /**
+     * @var Collection<ApprovalFlowInstanceNodeRelatedMember> 关联人员
+     */
+    protected $related_members;
 
     /**
      * @var ApprovalFlowInstanceNode 雄辩模型
@@ -115,6 +125,7 @@ abstract class AbstractNode
                 //没有下一个节点了，结束审批流
                 $approvalFlowInstance = $context->getApprovalFlowInstance();
                 $approvalFlowInstance->end_time = date('Y-m-d H:i:s');
+                $approvalFlowInstance->current_node_id = null;
                 $approvalFlowInstance->status = ApprovalFlowInstance::STATUS_END;
             }
         }
@@ -282,8 +293,27 @@ abstract class AbstractNode
     {
         $this->pass_time = $pass_time;
         $this->model->pass_time = $pass_time;
+        $this->model->status = ApprovalFlowInstanceNode::STATUS_PASS;
         return $this;
     }
+
+    /**
+     * @return Collection<ApprovalFlowInstanceNodeRelatedMember>
+     */
+    public function getRelatedMembers()
+    {
+        return $this->related_members;
+    }
+
+    /**
+     * @param Collection<ApprovalFlowInstanceNodeRelatedMember> $related_members
+     */
+    public function setRelatedMembers($related_members) : AbstractNode
+    {
+        $this->related_members = $related_members;
+        return $this;
+    }
+
 
 
     //endregion

@@ -114,7 +114,7 @@ class ApprovalFlowContext implements Arrayable, Jsonable, JsonSerializable
      */
     public static function getContextByInstance(ApprovalFlowInstance $obj_instance, ?AuthInfo $auth_info)
     {
-        $obj_instance = $obj_instance->load(["nodes", "nodes.relatedMembers"]);
+        $obj_instance = $obj_instance->loadMissing(["nodes","currentNode", "nodes.relatedMembers"]);
         $approvalFlowContext = new self();
         $approvalFlowContext->setAuthInfo($auth_info);
         $approvalFlowContext->setApprovalFlowInstance($obj_instance);

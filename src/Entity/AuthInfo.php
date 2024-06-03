@@ -35,6 +35,19 @@ class AuthInfo implements Arrayable,Jsonable,JsonSerializable
     }
 
     /**
+     * @explain:基于id和类型创建身份信息
+     * @param $auth_id
+     * @param $auth_type
+     * @return self
+     * @author: wzm
+     * @date: 2024/6/3 9:12
+     * @remark: 用于创建身份模型，但不存在详细当前用户的信息
+     */
+    public static function createByAuthIdAndType($auth_id,$auth_type) {
+        return new self(["id" => $auth_id],$auth_type);
+    }
+
+    /**
      * @return
      */
     public function getAuthType()
@@ -94,6 +107,17 @@ class AuthInfo implements Arrayable,Jsonable,JsonSerializable
             "id" => $this->getAuthId(),
             "type" => $this->auth_type
         ];
+    }
+
+    /**
+     * @explain: 获取用户唯一标识
+     * @return string
+     * @author: wzm
+     * @date: 2024/6/3 10:28
+     * @remark: 将id，用户类型使用-拼接
+     */
+    public function getAuthKey() {
+        return implode("-",[$this->getAuthId(),$this->getAuthType()]);
     }
 
     /**

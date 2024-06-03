@@ -32,8 +32,8 @@ class ApprovalFlowInstanceNode extends AbstractApprovalFlowBaseModel
     /**
      * 节点状态：0未操作 1通过
      */
-    const NODE_STATUS_UN_OPERATE = 0;
-    const NODE_STATUS_PASS = 1;
+    const STATUS_UN_OPERATE = 0;
+    const STATUS_PASS = 1;
 
     /**
      * 审批类型：
@@ -76,7 +76,7 @@ class ApprovalFlowInstanceNode extends AbstractApprovalFlowBaseModel
 
 
     public function operateRecords() {
-        return $this->hasMany(ApprovalFlowInstanceOperateRecord::class,"node_id");
+        return $this->hasMany(ApprovalFlowInstanceNodeOperateRecord::class,"node_id");
     }
 
 

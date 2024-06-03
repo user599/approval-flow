@@ -99,55 +99,57 @@ class ApprovalFlowInstanceService
      */
     public function refuseByNodeId($node_id, AuthInfo $operate_auth_info, $remark = null)
     {
-        return DB::transaction(function () use ($node_id, $operate_auth_info, $remark) {
-            list($obj_instance, $current_node, $current_related_member) = $this->preHandleRejectInfo($node_id, $operate_auth_info);
-            //添加一条当前人员的拒绝记录
-            $current_related_member->operateRecords()->create([
-                "instance_id" => $current_related_member->instance_id,
-                "node_id" => $current_related_member->node_id,
-                "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_REJECT,
-                "operate_time" => date('Y-m-d H:i:s'),
-                "remark" => $remark
-            ]);
+        return approvalFlowTransaction(
+            function () use ($node_id, $operate_auth_info, $remark) {
+                list($obj_instance, $current_node, $current_related_member) = $this->preHandleRejectInfo($node_id, $operate_auth_info);
+                //添加一条当前人员的拒绝记录
+                $current_related_member->operateRecords()->create([
+                    "instance_id" => $current_related_member->instance_id,
+                    "node_id" => $current_related_member->node_id,
+                    "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_REJECT,
+                    "operate_time" => date('Y-m-d H:i:s'),
+                    "remark" => $remark
+                ]);
 
-            //是否驳回到上一审核节点
-            if ($current_node->reject_type == ApprovalFlowInstanceNode::REJECT_TYPE_REJECT_TO_PRE_APPROVE) {
-                //获取上一级审核节点
-                $node_group_by_parent_id = $obj_instance->nodes->keyBy("parent_id");
-                $pre_node = $current_node;
-                $ary_rollback_node_info = [];
-                while (!empty($pre_node = $node_group_by_parent_id[$pre_node->id])) {
-                    $ary_rollback_node_info[] = $pre_node;
-                    if ($pre_node->type == ApprovalFlowInstanceNode::NODE_TYPE_APPROVE) {
-                        break;
+                //是否驳回到上一审核节点
+                if ($current_node->reject_type == ApprovalFlowInstanceNode::REJECT_TYPE_REJECT_TO_PRE_APPROVE) {
+                    //获取上一级审核节点
+                    $node_group_by_parent_id = $obj_instance->nodes->keyBy("parent_id");
+                    $pre_node = $current_node;
+                    $ary_rollback_node_info = [];
+                    while (!empty($pre_node = $node_group_by_parent_id[$pre_node->id])) {
+                        $ary_rollback_node_info[] = $pre_node;
+                        if ($pre_node->type == ApprovalFlowInstanceNode::NODE_TYPE_APPROVE) {
+                            break;
+                        }
                     }
                 }
-            }
-            //判断上级审核节点是否存在
-            if (!empty($pre_node)) {
-                /**
-                 * 则将从该节点开始的所有节点状态为未操作
-                 * 将所有相关人设置为未操作
-                 */
-                foreach ($ary_rollback_node_info as $node) {
-                    $node->relatedMembers()->update([
-                        "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_UN_OPERATE,
-                        "operate_time" => null
-                    ]);
-                    $node->status = ApprovalFlowInstanceNode::NODE_STATUS_UN_OPERATE;
-                    $node->pass_time = null;
-                    $node->remark = null;
-                    $node->save();
+                //判断上级审核节点是否存在
+                if (!empty($pre_node)) {
+                    /**
+                     * 则将从该节点开始的所有节点状态为未操作
+                     * 将所有相关人设置为未操作
+                     */
+                    foreach ($ary_rollback_node_info as $node) {
+                        $node->relatedMembers()->update([
+                            "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_UN_OPERATE,
+                            "operate_time" => null
+                        ]);
+                        $node->status = ApprovalFlowInstanceNode::STATUS_UN_OPERATE;
+                        $node->pass_time = null;
+                        $node->remark = null;
+                        $node->save();
+                    }
+                    //设置实例的当前节点
+                    $obj_instance->current_node_id = $pre_node->id;
+                } else {
+                    //若节点为拒绝即结束，或者没有上级审批节点，则直接结束
+                    //结束当前实例
+                    $this->endInstance($obj_instance->id, $remark);
                 }
-            } else {
-                //若节点为拒绝即结束，或者没有上级审批节点，则直接结束
-                //结束当前实例
-                $this->endInstance($obj_instance->id, $remark);
+                $obj_instance->save();
             }
-            $obj_instance->save();
-
-
-        });
+        );
     }
 
     /**
@@ -184,14 +186,23 @@ class ApprovalFlowInstanceService
         } catch (\Exception $e) {
             throw new ApprovalFlowException("当前人员无法执行驳回操作");
         }
-        $obj_instance->load(["nodes"]);
+        $obj_instance->loadMissing(["nodes"]);
         return [
             $obj_instance, $current_node, $current_related_member
         ];
 
+
+
     }
 
-
+    /**
+     * @explain:结束实例
+     * @param $instance_id
+     * @param $remark
+     * @author: wzm
+     * @date: 2024/6/3 15:57
+     * @remark:
+     */
     public function endInstance($instance_id, $remark = null)
     {
         $this->obj_model_instance->newQuery()

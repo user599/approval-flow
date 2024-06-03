@@ -23,7 +23,10 @@
     "autoload": {
         "psr-4": {
             "Js3\\ApprovalFlow\\": "src/"
-        }
+        },
+        "files": [
+            "src/helper.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

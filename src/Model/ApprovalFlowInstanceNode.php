@@ -75,6 +75,13 @@ class ApprovalFlowInstanceNode extends AbstractApprovalFlowBaseModel
     }
 
 
+    /**
+     * @explain: 操作记录
+     * @return mixed
+     * @author: wzm
+     * @date: 2024/6/4 8:07
+     * @remark:
+     */
     public function operateRecords() {
         return $this->hasMany(ApprovalFlowInstanceNodeOperateRecord::class,"node_id");
     }

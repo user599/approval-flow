@@ -6,6 +6,8 @@ namespace Js3\ApprovalFlow\Handler;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
 use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Entity\Node\AuditNode;
@@ -18,6 +20,7 @@ use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeRelatedMember;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeRelatedMemberService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceService;
+use Throwable;
 
 /**
  * @explain:抄送审批流处理
@@ -71,7 +74,6 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
         $this->obj_service_af_instance = app(ApprovalFlowInstanceService::class);
         $this->obj_service_af_node = app(ApprovalFlowInstanceNodeService::class);
         $this->obj_service_af_related_member = app(ApprovalFlowInstanceNodeRelatedMemberService::class);
-
     }
 
     /**
@@ -91,17 +93,25 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
             "form_data" => $form_data,
             "slug" => $this->approval_flow_slug,
         ];
-        $res = $this->http_client
+        $approval_data = $this->http_client
             ->setAuthInfo($this->auth_info)
             ->httpPost("/api/approval-flow/generate", $data);
-        return ApprovalFlowContext::storeApprovalFlowInstance($res, $this->auth_info);
+
+        return approvalFlowTransaction(
+            function () use ($approval_data) {
+                $obj_instance = $this->obj_service_af_instance->saveInstance($approval_data, $this->auth_info);
+                return ApprovalFlowContext::getContextByInstance($obj_instance, $this->auth_info);
+            }
+        );
+
     }
 
     /**
      * @explain: 执行审批流
-     * @param $instance_id
-     * @param $args
+     * @param int $instance_id
+     * @param array $args
      * @return ApprovalFlowContext
+     * @throws ApprovalFlowException|Throwable
      * @author: wzm
      * @date: 2024/5/20 9:41
      * @remark:
@@ -110,9 +120,16 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     {
         return approvalFlowTransaction(
             function () use ($instance_id, $args) {
+                // 生成上下文数据
                 $obj_approval_flow_context = ApprovalFlowContext::getContextByInstanceId($instance_id, $this->auth_info);
+                $obj_instance = $obj_approval_flow_context->getApprovalFlowInstance();
+                approvalFlowAssert(
+                    $obj_instance->status != ApprovalFlowInstance::STATUS_NOT_START,
+                    "该审批流已开始执行，请勿重复操作"
+                );
                 $obj_approval_flow_context->setArgs($args);
-                $obj_approval_flow_context->startInstance();
+                //开始执行
+                $obj_approval_flow_context->getStartNode()->execute($obj_approval_flow_context);
                 //额外事件处理
                 foreach ($obj_approval_flow_context->getExecutedNodes() as $executedNode) {
                     if ($executedNode instanceof AuditNode) {
@@ -159,7 +176,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
                 );
 
                 approvalFlowAssert(
-                    ($obj_instance->currentNode->id??null) != $node_id
+                    ($obj_instance->currentNode->id ?? null) != $node_id
                     , "未知或非活动节点，无法执行操作"
                 );
 

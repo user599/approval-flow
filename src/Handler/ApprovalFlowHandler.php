@@ -5,7 +5,9 @@ namespace Js3\ApprovalFlow\Handler;
 
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
 use Js3\ApprovalFlow\Entity\AuthInfo;
+use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
+use Throwable;
 
 interface ApprovalFlowHandler
 {
@@ -23,11 +25,12 @@ interface ApprovalFlowHandler
 
     /**
      * @explain: 执行审批流
-     * @param $instance_id
-     * @param $args
+     * @param int $instance_id
+     * @param array $args
      * @return ApprovalFlowContext
+     * @throws ApprovalFlowException|Throwable
      * @author: wzm
-     * @date: 2024/5/17 14:45
+     * @date: 2024/5/20 9:41
      * @remark:
      */
     public function execute($instance_id, $args): ApprovalFlowContext;

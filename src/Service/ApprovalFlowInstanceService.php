@@ -6,6 +6,9 @@ namespace Js3\ApprovalFlow\Service;
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
@@ -60,6 +63,30 @@ class ApprovalFlowInstanceService
     }
 
     /**
+     * @explain: 表单验证规则
+     * @return array
+     * @author: wzm
+     * @date: 2024/6/4 15:02
+     * @remark:
+     */
+    private function validateRule() {
+        return [
+            "type_id" => "required|integer",
+            "id" => "required|integer",
+            "allow_withdraw" => [
+                "required",
+                Rule::in([ApprovalFlowInstance::ALLOW_WITHDRAW_TRUE, ApprovalFlowInstance::ALLOW_WITHDRAW_FALSE])
+            ],
+            "withdraw_type" => [
+                "required_if:allow_withdraw," . ApprovalFlowInstance::ALLOW_WITHDRAW_TRUE,
+                Rule::in([ApprovalFlowInstance::WITHDRAW_TYPE_NOT_IN_PROGRESS, ApprovalFlowInstance::WITHDRAW_TYPE_IN_PROGRESS, ApprovalFlowInstance::WITHDRAW_TYPE_END])
+            ],
+            "node" => "required|array",
+            "form_data" => "nullable",
+        ];
+    }
+
+    /**
      * @explain:保存实例到数据库
      * @param $ary_data
      * @param AuthInfo $auth_info
@@ -70,6 +97,11 @@ class ApprovalFlowInstanceService
      */
     public function saveInstance($ary_data, AuthInfo $auth_info)
     {
+
+        $validator = Validator::make($ary_data, $this->validateRule());
+        if($validator->fails()) {
+            Log::error("[approval-flow]创建审批实例失败。",[$validator->errors()]);
+        }
         $ary_insert_data = [
             "config_id" => $ary_data["id"],
             "allow_withdraw" => $ary_data["allow_withdraw"],
@@ -190,7 +222,6 @@ class ApprovalFlowInstanceService
         return [
             $obj_instance, $current_node, $current_related_member
         ];
-
 
 
     }

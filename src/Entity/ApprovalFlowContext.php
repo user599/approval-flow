@@ -60,29 +60,6 @@ class ApprovalFlowContext implements Arrayable, Jsonable, JsonSerializable
     private function __construct()
     {
         $this->node_list = new Collection([]);
-
-    }
-
-
-    /**
-     * @explain: 存储审批流信息
-     * @param array $approval_data
-     * @param AuthInfo|null $auth_info
-     * @return ApprovalFlowContext
-     * @throws ApprovalFlowException
-     * @author: wzm
-     * @date: 2024/5/20 17:02
-     * @remark:
-     */
-    public static function storeApprovalFlowInstance(array $approval_data, AuthInfo $auth_info)
-    {
-        return DB::connection(config("approval-flow.db.connection"))
-            ->transaction(
-                function () use ($approval_data, $auth_info) {
-                    $obj_instance = app(ApprovalFlowInstanceService::class)->saveInstance($approval_data, $auth_info);
-                    return self::getContextByInstance($obj_instance, $auth_info);
-                }
-            );
     }
 
     /**
@@ -100,7 +77,6 @@ class ApprovalFlowContext implements Arrayable, Jsonable, JsonSerializable
         $obj_instance = app(ApprovalFlowInstanceService::class)->findById($int_instance_id);
         return self::getContextByInstance($obj_instance, $auth_info);
     }
-
 
     /**
      * @explain: 基于审批流实例获取审批流上下文
@@ -157,23 +133,6 @@ class ApprovalFlowContext implements Arrayable, Jsonable, JsonSerializable
         }
         return $approvalFlowContext;
     }
-
-    /**
-     * @explain:开始执行审批流
-     * @author: wzm
-     * @date: 2024/5/27 14:34
-     * @remark:
-     */
-    public function startInstance()
-    {
-        return DB::connection(config("approval-flow.db.connection"))
-            ->transaction(function () {
-                $this->getStartNode()->execute($this);
-                $this->approval_flow_instance->save();
-                return $this;
-            });
-    }
-
 
     /**
      * @explain: 获取开始节点

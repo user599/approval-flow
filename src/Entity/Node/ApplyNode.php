@@ -40,9 +40,6 @@ class ApplyNode extends AbstractNode
          * 3.申请人设置为通过
          */
         $obj_instance = $context->getApprovalFlowInstance();
-        if ($obj_instance->status != ApprovalFlowInstance::STATUS_NOT_START) {
-           throw new ApprovalFlowException("审批流已开始");
-        }
         $obj_instance->status = ApprovalFlowInstance::STATUS_RUNNING;
         $current_date = date('Y-m-d H:i:s');
         $this->setPassTime($current_date);

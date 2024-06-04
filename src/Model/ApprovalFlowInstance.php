@@ -28,6 +28,12 @@ class ApprovalFlowInstance extends AbstractApprovalFlowBaseModel
     const STATUS_REFUSE = 5;
 
     /**
+     * 是允许撤回
+     */
+    const ALLOW_WITHDRAW_TRUE = 1;
+    const ALLOW_WITHDRAW_FALSE = 0;
+
+    /**
      * 撤回类型 1 未进入流程时 2流程中 3 流程结束时
      */
     const WITHDRAW_TYPE_NOT_IN_PROGRESS = 1;

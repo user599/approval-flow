@@ -123,10 +123,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
                 // 生成上下文数据
                 $obj_approval_flow_context = ApprovalFlowContext::getContextByInstanceId($instance_id, $this->auth_info);
                 $obj_instance = $obj_approval_flow_context->getApprovalFlowInstance();
-                approvalFlowAssert(
-                    $obj_instance->status != ApprovalFlowInstance::STATUS_NOT_START,
-                    "该审批流已开始执行，请勿重复操作"
-                );
+                approvalFlowAssert($obj_instance->status != ApprovalFlowInstance::STATUS_NOT_START, "该审批流已开始执行，请勿重复操作");
                 $obj_approval_flow_context->setArgs($args);
                 //开始执行
                 $obj_approval_flow_context->getStartNode()->execute($obj_approval_flow_context);
@@ -166,19 +163,9 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
                 ];
                 $obj_node = $this->obj_service_af_node->findById($node_id);
 
-                approvalFlowAssert(
-                    empty($obj_instance = $obj_node->instance)
-                    , "未知或已删除的审批流信息-[{$obj_node->instance_id}]"
-                );
-                approvalFlowAssert(
-                    $obj_instance->status != ApprovalFlowInstance::STATUS_RUNNING
-                    , "审批流未开始或已结束"
-                );
-
-                approvalFlowAssert(
-                    ($obj_instance->currentNode->id ?? null) != $node_id
-                    , "未知或非活动节点，无法执行操作"
-                );
+                approvalFlowAssert(empty($obj_instance = $obj_node->instance), "未知或已删除的审批流信息-[{$obj_node->instance_id}]");
+                approvalFlowAssert($obj_instance->status != ApprovalFlowInstance::STATUS_RUNNING, "审批流未开始或已结束");
+                approvalFlowAssert(($obj_instance->currentNode->id ?? null) != $node_id, "未知或非活动节点，无法执行操作");
 
                 //格式化审批流信息
                 $obj_approval_flow_context = ApprovalFlowContext::getContextByInstance($obj_instance, $this->auth_info);
@@ -226,34 +213,20 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
         return approvalFlowTransaction(
             function ($instance_id, $remark = null) {
                 $obj_approval_flow_instance = $this->obj_service_af_instance->findById($instance_id);
-                approvalFlowAssert(
-                    !$obj_approval_flow_instance->allow_withdraw
-                    , "该审批流禁止撤回"
-                );
-                approvalFlowAssert(
-                    $obj_approval_flow_instance->status == ApprovalFlowInstance::STATUS_WITHDRAW
-                    , "该审批流已撤回，请勿重复操作"
-                );
+                approvalFlowAssert(!$obj_approval_flow_instance->allow_withdraw, "该审批流禁止撤回");
+                approvalFlowAssert($obj_approval_flow_instance->status == ApprovalFlowInstance::STATUS_WITHDRAW, "该审批流已撤回，请勿重复操作");
                 //验证撤回类型
                 switch ($obj_withdraw_type = $obj_approval_flow_instance->withdraw_type) {
                     case ApprovalFlowInstance::WITHDRAW_TYPE_NOT_IN_PROGRESS:
                         //未进入流程时撤回：状态为未开始，进行中，且未存在审核记录（即操作记录）
-                        approvalFlowAssert(
-                            !in_array($obj_approval_flow_instance->status, [ApprovalFlowInstance::STATUS_NOT_START, ApprovalFlowInstance::STATUS_RUNNING])
-                            , "该审批流已进入流程，禁止撤回"
-                        );
-                        approvalFlowAssert(
-                            $obj_approval_flow_instance->operateRecords()->exists()
-                            , "该审批流已进入流程，禁止撤回"
-                        );
+                        approvalFlowAssert(!in_array($obj_approval_flow_instance->status, [ApprovalFlowInstance::STATUS_NOT_START, ApprovalFlowInstance::STATUS_RUNNING]), "该审批流已进入流程，禁止撤回");
+                        approvalFlowAssert($obj_approval_flow_instance->operateRecords()->exists(), "该审批流已进入流程，禁止撤回");
                         break;
                     case ApprovalFlowInstance::WITHDRAW_TYPE_IN_PROGRESS:
-                        approvalFlowAssert(
-                            $obj_approval_flow_instance->status == ApprovalFlowInstance::STATUS_END
-                            , "该审批流已结束，禁止撤回"
-                        );
+                        approvalFlowAssert($obj_approval_flow_instance->status == ApprovalFlowInstance::STATUS_END, "该审批流已结束，禁止撤回");
                         break;
                     case ApprovalFlowInstance::WITHDRAW_TYPE_END:
+                        //结束后撤回，任意时刻可以撤回
                         break;
                     default:
                         throw new ApprovalFlowException("未知的撤回类型:{$obj_withdraw_type}");

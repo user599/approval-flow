@@ -319,4 +319,38 @@ abstract class AbstractNode
     //endregion
 
 
+    /**
+     * @explain:格式化方法
+     * @return array
+     * @author: wzm
+     * @date: 2024/5/29 14:54
+     * @remark:
+     */
+    public function toArray()
+    {
+        return [
+            "id" => $this->id,
+            "parent_id" => $this->parent_id,
+            "name" => $this->name,
+            "pass_time" => $this->pass_time,
+        ];
+    }
+
+    public function jsonSerialize()
+    {
+        return $this->toArray();
+    }
+
+    public function toJson($options = 0)
+    {
+        $json = json_encode($this->jsonSerialize(), $options);
+
+        return $json;
+    }
+
+    public function __toString()
+    {
+        return $this->toJson();
+    }
+
 }

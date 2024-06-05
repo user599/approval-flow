@@ -254,7 +254,6 @@ class ApprovalFlowContext implements Arrayable, Jsonable, JsonSerializable
         return [
             "instance" => $this->getApprovalFlowInstance(),
             "current_node" => $this->getCurrentNode(),
-            "node_list" => $this->getNodeList()->toArray(),
         ];
     }
 

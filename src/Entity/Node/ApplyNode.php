@@ -67,5 +67,10 @@ class ApplyNode extends AbstractNode
         return $this;
     }
 
+    public function __toString()
+    {
+        return parent::__toString();
+    }
+
 
 }

@@ -1,0 +1,49 @@
+<?php
+
+namespace DummyNamespace;
+
+use Js3\ApprovalFlow\Entity\AuthInfo;
+use Js3\ApprovalFlow\RelatedApplication\RelatedApplication;
+
+/**
+ * @explain:
+ * @author:
+ * @date:
+ */
+class DummyClass implements RelatedApplication
+{
+
+    /**
+     * @explain:获取应用列表数据
+     * @param AuthInfo $authInfo 当前登陆用户信息
+     * @return array
+     * @author: wzm
+     * @date: 2024/5/17 15:47
+     * @remark: 用于分支条件的下拉框，存在children时会渲染为树装选择器
+     *      数据结构
+     *          [
+     *             'name'=>节点名
+     *             'value' => 节点值
+     *              'children' => [子节点信息]
+     *          ]
+     *
+     */
+    public function options(AuthInfo $authInfo): array
+    {
+    }
+
+    /**
+         * @explain:获取指定节点的子集
+         * @param AuthInfo $authInfo 当前用户信息
+         * @param int|string $node_primary_value  指定节点的标识，即上方应用列表数据中的节点值
+         * @return array
+         * @author: wzm
+         * @date: 2024/5/17 15:48
+         * @remark: 用于在分支条件使用 “从属于/不从属于”这类集合判断时拿去指定节点的子集
+         *          数据结构与上方 获取应用列表数据 一致
+    */
+    public function children(AuthInfo $authInfo, $parent_slug) : array
+    {
+
+    }
+}

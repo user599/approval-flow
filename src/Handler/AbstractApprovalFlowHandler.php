@@ -6,6 +6,7 @@ namespace Js3\ApprovalFlow\Handler;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
@@ -17,9 +18,11 @@ use Js3\ApprovalFlow\HttpClient\HttpClient;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeRelatedMember;
+use Js3\ApprovalFlow\Parser\InstanceParser;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeRelatedMemberService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceService;
+use Js3\ApprovalFlow\Utils\CacheUtils;
 use Throwable;
 
 /**
@@ -79,7 +82,6 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     /**
      * @explain: 创建审批流
      * @param $form_data
-     * @return ApprovalFlowContext
      * @throws \GuzzleHttp\Exception\GuzzleException
      * @throws \Js3\ApprovalFlow\Exceptions\ApprovalFlowException
      * @throws \Js3\ApprovalFlow\Exceptions\RemoteCallErrorException
@@ -89,6 +91,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      */
     public function generate($form_data = [])
     {
+        //发送请求获取数据
         $data = [
             "form_data" => $form_data,
             "slug" => $this->approval_flow_slug,
@@ -96,19 +99,20 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
         $approval_data = $this->http_client
             ->setAuthInfo($this->auth_info)
             ->httpPost("/api/approval-flow/generate", $data);
-
-        return approvalFlowTransaction(
-            function () use ($approval_data) {
-                $obj_instance = $this->obj_service_af_instance->saveInstance($approval_data, $this->auth_info);
-                return ApprovalFlowContext::getContextByInstance($obj_instance, $this->auth_info);
-            }
-        );
-
+        //格式化响应
+        /**
+         * 格式化响应
+         * 1.将数据格式化后放入redis
+         * 2.前台使用时通过redis的key启动审批流
+         */
+        $ary_parse_data = InstanceParser::parseFromResponseToArr($approval_data,$this->auth_info);
+        $ary_parse_data["id"] =  CacheUtils::setCache($ary_parse_data);
+        return $ary_parse_data;
     }
 
     /**
      * @explain: 执行审批流
-     * @param int $instance_id
+     * @param int $cache_id
      * @param array $args
      * @return ApprovalFlowContext
      * @throws ApprovalFlowException|Throwable
@@ -116,29 +120,31 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      * @date: 2024/5/20 9:41
      * @remark:
      */
-    public function execute($instance_id, $args = []): ApprovalFlowContext
+    public function execute($cache_id, $args = []): ApprovalFlowContext
     {
-        return approvalFlowTransaction(
-            function () use ($instance_id, $args) {
-                // 生成上下文数据
-                $obj_approval_flow_context = ApprovalFlowContext::getContextByInstanceId($instance_id, $this->auth_info);
-                $obj_instance = $obj_approval_flow_context->getApprovalFlowInstance();
-                approvalFlowAssert($obj_instance->status != ApprovalFlowInstance::STATUS_NOT_START, "该审批流已开始执行，请勿重复操作");
-                $obj_approval_flow_context->setArgs($args);
-                //开始执行
-                $obj_approval_flow_context->getStartNode()->execute($obj_approval_flow_context);
-                //额外事件处理
-                foreach ($obj_approval_flow_context->getExecutedNodes() as $executedNode) {
-                    if ($executedNode instanceof AuditNode) {
-                        $this->handleAuditExtraOperate($executedNode);
-                    } elseif ($executedNode instanceof CarbonCopyNode) {
-                        $this->handleCarbonCopyExtraOperate($executedNode);
-                    }
-                }
-                return $obj_approval_flow_context;
-            }
-        );
+        return approvalFlowTransaction(function ()  use($cache_id,$args){
+            //取出缓存信息并创建审批流实例
+            $cache_data = CacheUtils::getCache($cache_id);
+            $obj_approval_instance = InstanceParser::parseFromArrToModel($cache_data);
 
+            //格式化
+            $obj_approval_flow_context = ApprovalFlowContext::getContextByInstance($obj_approval_instance, $this->auth_info);
+            $obj_instance = $obj_approval_flow_context->getApprovalFlowInstance();
+            approvalFlowAssert($obj_instance->status != ApprovalFlowInstance::STATUS_NOT_START, "该审批流已开始执行，请勿重复操作");
+            $obj_approval_flow_context->setArgs($args);
+
+            //开始执行
+            $obj_approval_flow_context->getStartNode()->execute($obj_approval_flow_context);
+            //额外事件处理
+            foreach ($obj_approval_flow_context->getExecutedNodes() as $executedNode) {
+                if ($executedNode instanceof AuditNode) {
+                    $this->handleAuditExtraOperate($executedNode);
+                } elseif ($executedNode instanceof CarbonCopyNode) {
+                    $this->handleCarbonCopyExtraOperate($executedNode);
+                }
+            }
+            return $obj_approval_flow_context;
+        });
 
     }
 

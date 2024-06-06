@@ -61,7 +61,7 @@ class ApplyNode extends AbstractNode
      * @param ApprovalFlowInstanceNodeRelatedMember $applicant
      * @return ApplyNode
      */
-    public function setApplicant(ApprovalFlowInstanceNodeRelatedMember $applicant): ApplyNode
+    public function setApplicant(?ApprovalFlowInstanceNodeRelatedMember $applicant): ApplyNode
     {
         $this->applicant = $applicant;
         return $this;

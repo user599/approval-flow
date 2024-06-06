@@ -4,6 +4,8 @@
 namespace Js3\ApprovalFlow\Entity\Node;
 
 
+use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
@@ -13,6 +15,7 @@ use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeRelatedMember;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeRelatedMemberService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceService;
+use JsonSerializable;
 
 
 /**
@@ -20,7 +23,7 @@ use Js3\ApprovalFlow\Service\ApprovalFlowInstanceService;
  * @author: wzm
  * @date: 2024/5/14 16:28
  */
-abstract class AbstractNode
+abstract class AbstractNode implements Arrayable, Jsonable, JsonSerializable
 {
 
     /**
@@ -333,6 +336,7 @@ abstract class AbstractNode
             "parent_id" => $this->parent_id,
             "name" => $this->name,
             "pass_time" => $this->pass_time,
+            "related_member" => $this->related_members
         ];
     }
 

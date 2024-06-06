@@ -7,6 +7,7 @@ namespace Js3\ApprovalFlow\HttpClient;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\TransferException;
 use GuzzleHttp\Promise\PromiseInterface;
+use Illuminate\Support\Facades\Redis;
 use Js3\ApprovalFlow\Encrypter\Encrypter;
 use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;

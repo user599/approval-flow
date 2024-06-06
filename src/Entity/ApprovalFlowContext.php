@@ -118,7 +118,7 @@ class ApprovalFlowContext implements Arrayable, Jsonable, JsonSerializable
         //O(2n)降低复杂度
         $ary_node_key_by_parent_id = $approvalFlowContext->node_list->keyBy(function ($item) {
             return $item->getParentId();
-        })->toArray();
+        });
         foreach ($approvalFlowContext->node_list as &$node) {
             $curr_node_id = $node->getId();
             //设置当前节点
@@ -252,8 +252,9 @@ class ApprovalFlowContext implements Arrayable, Jsonable, JsonSerializable
     public function toArray()
     {
         return [
-            "instance" => $this->getApprovalFlowInstance(),
-            "current_node" => $this->getCurrentNode(),
+            "instance" => $this->approval_flow_instance->withoutRelations(),
+            "current_node" => $this->current_node,
+            "node_list" => $this->node_list,
         ];
     }
 

@@ -49,3 +49,41 @@ if (!function_exists('approvalFlowAssert')) {
         }
     }
 }
+
+
+if (!function_exists('approvalFlowEnableQueryLog')) {
+
+    /**
+     * @explain: 开启打印sql日志
+     * @param $callback
+     * @return mixed
+     * @throws Throwable
+     * @author: wzm
+     * @date: 2024/6/3 9:59
+     * @remark:
+     */
+    function approvalFlowEnableQueryLog()
+    {
+        return DB::connection(config("approval-flow.db.connection"))
+            ->enableQueryLog();
+    }
+}
+
+if (!function_exists('approvalFlowGetQueryLog')) {
+
+    /**
+     * @explain: 打印sql日志
+     * @param $callback
+     * @return mixed
+     * @throws Throwable
+     * @author: wzm
+     * @date: 2024/6/3 9:59
+     * @remark:
+     */
+    function approvalFlowGetQueryLog()
+    {
+        return DB::connection(config("approval-flow.db.connection"))
+            ->getQueryLog();
+    }
+}
+

@@ -9,6 +9,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\Grammars\Grammar;
 use Illuminate\Support\Fluent;
 use Illuminate\Support\ServiceProvider;
+use Js3\ApprovalFlow\Console\RelatedApplicationMakeCommand;
 use Js3\ApprovalFlow\Encrypter\AesEncrypter;
 use Js3\ApprovalFlow\Encrypter\Encrypter;
 use Js3\ApprovalFlow\RelatedApplication\RelatedApplicationFactory;
@@ -48,6 +49,16 @@ class ApprovalFlowServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__ . '/Console/stubs/related-application.stub'       => base_path('stubs/related-application.stub'),
+            ], 'stubs');
+            $this->commands([
+                RelatedApplicationMakeCommand::class
+            ]);
+        }
+
         //发布配置文件
         $this->publishes([
             $this->getConfigFilePath() => config_path('approval-flow.php'),

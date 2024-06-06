@@ -26,6 +26,7 @@ class ApplyNodeParser extends AbstractNodeParser
 
     protected function parseExtra(AbstractNode $node, Model $model)
     {
+
         $node->setApplicant($model->relatedMembers->first()??null);
     }
 

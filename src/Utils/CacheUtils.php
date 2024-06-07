@@ -4,7 +4,6 @@
 namespace Js3\ApprovalFlow\Utils;
 
 
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
 
@@ -26,10 +25,11 @@ class CacheUtils
      * @date: 2024/6/5 17:30
      * @remark:
      */
-    public static function setCache($data) {
+    public static function setCache($data)
+    {
         $str_key = Str::uuid()->serialize();
         $data = json_encode($data);
-        Redis::SETEX($str_key, self::CACHE_TTL,$data);
+        Redis::SETEX($str_key, self::CACHE_TTL, $data);
         return $str_key;
     }
 
@@ -46,9 +46,9 @@ class CacheUtils
     public static function getCache($str_key)
     {
         $str_data = Redis::get($str_key);
-        approvalFlowAssert(empty($str_data),"数据异常或已过期，请刷新后重试");
+        approvalFlowAssert(empty($str_data), "数据异常或已过期，请刷新后重试");
         //使用后删除
         Redis::del($str_key);
-        return json_decode($str_data,true);
+        return json_decode($str_data, true);
     }
 }

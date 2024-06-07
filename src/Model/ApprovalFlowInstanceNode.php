@@ -70,8 +70,9 @@ class ApprovalFlowInstanceNode extends AbstractApprovalFlowBaseModel
      * @date: 2024/5/20 9:30
      * @remark:
      */
-    public function relatedMembers() {
-        return $this->hasMany(ApprovalFlowInstanceNodeRelatedMember::class,"node_id");
+    public function relatedMembers()
+    {
+        return $this->hasMany(ApprovalFlowInstanceNodeRelatedMember::class, "node_id");
     }
 
 
@@ -82,8 +83,9 @@ class ApprovalFlowInstanceNode extends AbstractApprovalFlowBaseModel
      * @date: 2024/6/4 8:07
      * @remark:
      */
-    public function operateRecords() {
-        return $this->hasMany(ApprovalFlowInstanceNodeOperateRecord::class,"node_id");
+    public function operateRecords()
+    {
+        return $this->hasMany(ApprovalFlowInstanceNodeOperateRecord::class, "node_id");
     }
 
 

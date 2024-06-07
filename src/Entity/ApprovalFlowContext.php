@@ -7,7 +7,6 @@ namespace Js3\ApprovalFlow\Entity;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Js3\ApprovalFlow\Entity\Node\AbstractNode;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
@@ -90,7 +89,7 @@ class ApprovalFlowContext implements Arrayable, Jsonable, JsonSerializable
      */
     public static function getContextByInstance(ApprovalFlowInstance $obj_instance, ?AuthInfo $auth_info)
     {
-        $obj_instance = $obj_instance->loadMissing(["nodes","currentNode", "nodes.relatedMembers"]);
+        $obj_instance = $obj_instance->loadMissing(["nodes", "nodes.relatedMembers"]);
         $approvalFlowContext = new self();
         $approvalFlowContext->setAuthInfo($auth_info);
         $approvalFlowContext->setApprovalFlowInstance($obj_instance);
@@ -108,7 +107,7 @@ class ApprovalFlowContext implements Arrayable, Jsonable, JsonSerializable
             }
             $parser->parseModelToNode($model_node);
             $node = $parser->getNode();
-            //添加后置拦截器
+            //TODO 可以通过添加后置拦截器的方式优化后置的审核/抄送额外操作
             $approvalFlowContext->node_list->add($node);
         }
 
@@ -160,10 +159,16 @@ class ApprovalFlowContext implements Arrayable, Jsonable, JsonSerializable
      * @param AbstractNode $current_node
      * @return ApprovalFlowContext
      */
-    public function setCurrentNode(AbstractNode $current_node): ApprovalFlowContext
+    public function setCurrentNode(?AbstractNode $current_node): ApprovalFlowContext
     {
-        $this->approval_flow_instance->current_node_id = $current_node->getId();
-        $this->current_node = $current_node;
+        if (!empty($current_node)) {
+            $this->approval_flow_instance->current_node_id = $current_node->getId();
+            $this->current_node = $current_node;
+        } else {
+            $this->approval_flow_instance->current_node_id = null;
+
+            $this->current_node = null;
+        }
         return $this;
     }
 

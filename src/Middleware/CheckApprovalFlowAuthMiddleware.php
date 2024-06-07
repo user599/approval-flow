@@ -10,12 +10,16 @@ use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 
 /**
- * @explain:
+ * @explain: 身份验证中间件
  * @author: wzm
  * @date: 2024/5/30 8:39
  */
 class CheckApprovalFlowAuthMiddleware
 {
+
+    const HEADER_KEY = "token";
+
+    const AUTH_KEY = "approval-flow-auth";
 
     /**
      * @var Encrypter
@@ -41,7 +45,7 @@ class CheckApprovalFlowAuthMiddleware
     public function handle(Request $request, \Closure $next)
     {
         //验证身份信息
-        $str_token = $request->header("token");
+        $str_token = $request->header(self::HEADER_KEY);
         if (empty($str_token)) {
             throw new ApprovalFlowException("身份验证失败：未知的身份信息");
         } else {
@@ -51,7 +55,7 @@ class CheckApprovalFlowAuthMiddleware
                 throw new ApprovalFlowException("身份验证失败：缺少必要参数");
             }
             $auth_info = new AuthInfo($auth_info['auth_data'], $auth_info['auth_type']);
-            $request->offsetSet("auth_info", $auth_info);
+            $request->offsetSet(self::AUTH_KEY, $auth_info);
         }
         return $next($request);
     }

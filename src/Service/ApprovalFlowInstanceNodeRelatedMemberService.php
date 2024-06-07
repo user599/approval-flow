@@ -5,7 +5,6 @@ namespace Js3\ApprovalFlow\Service;
 
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\DB;
 use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeOperator;
@@ -60,28 +59,59 @@ class ApprovalFlowInstanceNodeRelatedMemberService
     }
 
     /**
-     * @explain: 创建相关人
-     * @param array $operator_data
-     * @param $instance_id
-     * @param $node_id
+     * @explain:基于节点id和用户信息获取实例
+     * @param int $obj_node
+     * @param AuthInfo $obj_auth_info
+     * @return mixed
      * @author: wzm
-     * @date: 2024/5/24 14:10
+     * @date: 2024/6/7 11:00
      * @remark:
      */
-    public function createRelatedMember(array $operator_data, $instance_id, $node_id)
+    public function findByNodeIdAndAuthInfo($int_node_id, $obj_auth_info)
     {
-        foreach ($operator_data as $operator_data) {
-            $ary_insert_operator_data = [
-                "node_id" => $node_id,
-                "instance_id" => $instance_id,
-                "member_id" => $operator_data["member_id"],
-                "member_type" => $operator_data["member_type"],
-                "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_UN_OPERATE
-            ];
-            $this->obj_model_related_member->newQuery()->create($ary_insert_operator_data);
-        }
+        return $this->obj_model_related_member
+            ->newQuery()
+            ->ofAuth($obj_auth_info)
+            ->where("node_id", $int_node_id)
+            ->firstOrFail();
     }
 
 
+    /**
+     * @explain: 基于节点和身份信息执行审核通过
+     * @param int $int_node_id
+     * @param AuthInfo $auth_info
+     * @param int $audit_status {@see ApprovalFlowInstanceNodeRelatedMember::STATUS_xxx}
+     * @param string $remark 备注信息
+     * @return mixed
+     * @throws ApprovalFlowException
+     * @throws \Throwable
+     * @author: wzm
+     * @date: 2024/6/7 11:11
+     * @remark:
+     */
+    public function auditByNodeIdAndAuthInfo($int_node_id, $auth_info, $status, $remark = null)
+    {
+        return approvalFlowTransaction(function () use ($int_node_id, $auth_info, $status, $remark) {
+            try {
+                $current_related_member = $this->findByNodeIdAndAuthInfo($int_node_id, $auth_info);
+            } catch (\Exception $e) {
+                throw new ApprovalFlowException("未知或已删除的相关人员");
+            }
 
+            approvalFlowAssert($current_related_member->status != ApprovalFlowInstanceNodeRelatedMember::STATUS_UN_OPERATE, "该人员已执行操作，请勿重复");
+            $current_related_member->status = $status;
+            $current_related_member->operate_time = now();
+            $current_related_member->remark = $remark;
+            $current_related_member->save();
+            //创建一条操作记录
+            $this->obj_service_operate_record->createOperateRecordByRelatedMember(
+                $current_related_member,
+                $status,
+                $remark
+            );
+            return true;
+        });
+
+    }
 }

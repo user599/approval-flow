@@ -12,7 +12,8 @@ namespace Js3\ApprovalFlow\Utils;
 class OutputUtils
 {
 
-    public static function p(...$args) {
+    public static function p(...$args)
+    {
         $ary_data = func_get_args();
         echo '<pre>';
         foreach ($ary_data as $item) {

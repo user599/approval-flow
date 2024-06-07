@@ -18,7 +18,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 /**
- * @explain:
+ * @explain: 远程请求用客户端，替代原生curl
  * @author: wzm
  * @date: 2024/5/16 17:24
  */
@@ -84,9 +84,9 @@ class HttpClient
 
     /**
      * @explain:实际请求方法
-     * @param string $url   请求url
-     * @param string $method    请求方法
-     * @param array $options    请求选项信息 {@see https://guzzle-cn.readthedocs.io/zh-cn/latest/request-options.html}
+     * @param string $url 请求url
+     * @param string $method 请求方法
+     * @param array $options 请求选项信息 {@see https://guzzle-cn.readthedocs.io/zh-cn/latest/request-options.html}
      * @return array|mixed
      * @throws \GuzzleHttp\Exception\GuzzleException
      * @throws RemoteCallErrorException
@@ -101,7 +101,7 @@ class HttpClient
             $this->registerHttpMiddlewares();
         }
         $response = $this->request($url, $method, $options);
-        return $this->formatResponse($response)['data']??[];
+        return $this->formatResponse($response)['data'] ?? [];
 
     }
 
@@ -131,7 +131,7 @@ class HttpClient
         $this->pushMiddleware($this->authHeaderMiddleware(), 'auth-token');
 
         //2.返回值处理中间件
-        $this->pushMiddleware($this->wrapperResponseMiddleware(),"wrapper-response");
+        $this->pushMiddleware($this->wrapperResponseMiddleware(), "wrapper-response");
         //...待定其他处理
     }
 
@@ -177,10 +177,10 @@ class HttpClient
                     if (
                         $response->getStatusCode() >= 400
                         ||
-                        (!empty($response_body) && !($response_body["status"]??false))
+                        (!empty($response_body) && !($response_body["status"] ?? false))
                     ) {
-                        $msg = $response_body["msg"] ??'服务器错误';
-                        throw new RemoteCallErrorException("请求远程服务器失败:" . $msg,$response);
+                        $msg = $response_body["msg"] ?? '服务器错误';
+                        throw new RemoteCallErrorException("请求远程服务器失败:" . $msg, $response);
                     }
                     return $response;
                 });
@@ -198,7 +198,7 @@ class HttpClient
      */
     private function formatResponse(ResponseInterface $response)
     {
-        return  json_decode((string) $response->getBody(), true);
+        return json_decode((string)$response->getBody(), true);
     }
 
 

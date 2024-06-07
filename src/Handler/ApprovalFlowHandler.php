@@ -6,7 +6,7 @@ namespace Js3\ApprovalFlow\Handler;
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
 use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
-use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
+use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
 use Throwable;
 
 interface ApprovalFlowHandler
@@ -49,10 +49,11 @@ interface ApprovalFlowHandler
      * @explain: 拒绝
      * @param $node_id
      * @param $remark
-     * @return ApprovalFlowContext
+     * @return ApprovalFlowInstanceNode|null
      * @author: wzm
      * @date: 2024/5/17 14:45
-     * @remark:
+     * @remark:返回空说明直接结束
+     *          返回节点说明重新回到了该节点，需要重新审批
      */
     public function auditRefuse($node_id, $remark = null);
 

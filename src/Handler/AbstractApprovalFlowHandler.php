@@ -19,6 +19,7 @@ use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeRelatedMember;
 use Js3\ApprovalFlow\Parser\InstanceParser;
+use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeOperateRecordService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeRelatedMemberService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceService;
@@ -63,6 +64,10 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      */
     private $obj_service_af_related_member;
 
+    /**
+     * @var ApprovalFlowInstanceNodeOperateRecordService
+     */
+    private $obj_service_af_operate_record;
 
     /**
      * @param AuthInfo 身份信息，需要用户自行填入
@@ -77,17 +82,11 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
         $this->obj_service_af_instance = app(ApprovalFlowInstanceService::class);
         $this->obj_service_af_node = app(ApprovalFlowInstanceNodeService::class);
         $this->obj_service_af_related_member = app(ApprovalFlowInstanceNodeRelatedMemberService::class);
+        $this->obj_service_af_operate_record = app(ApprovalFlowInstanceNodeOperateRecordService::class);
     }
 
     /**
-     * @explain: 创建审批流
-     * @param $form_data
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     * @throws \Js3\ApprovalFlow\Exceptions\ApprovalFlowException
-     * @throws \Js3\ApprovalFlow\Exceptions\RemoteCallErrorException
-     * @author: wzm
-     * @date: 2024/5/20 17:03
-     * @remark:
+     * @inheritDoc
      */
     public function generate($form_data = [])
     {
@@ -105,24 +104,17 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
          * 1.将数据格式化后放入redis
          * 2.前台使用时通过redis的key启动审批流
          */
-        $ary_parse_data = InstanceParser::parseFromResponseToArr($approval_data,$this->auth_info);
-        $ary_parse_data["id"] =  CacheUtils::setCache($ary_parse_data);
+        $ary_parse_data = InstanceParser::parseFromResponseToArr($approval_data, $this->auth_info);
+        $ary_parse_data["id"] = CacheUtils::setCache($ary_parse_data);
         return $ary_parse_data;
     }
 
     /**
-     * @explain: 执行审批流
-     * @param int $cache_id
-     * @param array $args
-     * @return ApprovalFlowContext
-     * @throws ApprovalFlowException|Throwable
-     * @author: wzm
-     * @date: 2024/5/20 9:41
-     * @remark:
+     * @inheritDoc
      */
     public function execute($cache_id, $args = []): ApprovalFlowContext
     {
-        return approvalFlowTransaction(function ()  use($cache_id,$args){
+        return approvalFlowTransaction(function () use ($cache_id, $args) {
             //取出缓存信息并创建审批流实例
             $cache_data = CacheUtils::getCache($cache_id);
             $obj_approval_instance = InstanceParser::parseFromArrToModel($cache_data);
@@ -149,18 +141,10 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     }
 
     /**
-     * @explain: 审核通过
-     * @param $node_id
-     * @param $remark
-     * @param $operate_time
-     * @return ApprovalFlowContext
-     * @author: wzm
-     * @date: 2024/5/20 9:41
-     * @remark:
+     * @inheritDoc
      */
     public function auditPass($node_id, $remark = null)
     {
-
         return approvalFlowTransaction(
             function () use ($node_id, $remark) {
                 $args = [
@@ -168,13 +152,15 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
                     "remark" => $remark,
                 ];
                 $obj_node = $this->obj_service_af_node->findById($node_id);
-
                 approvalFlowAssert(empty($obj_instance = $obj_node->instance), "未知或已删除的审批流信息-[{$obj_node->instance_id}]");
                 approvalFlowAssert($obj_instance->status != ApprovalFlowInstance::STATUS_RUNNING, "审批流未开始或已结束");
-                approvalFlowAssert(($obj_instance->currentNode->id ?? null) != $node_id, "未知或非活动节点，无法执行操作");
+                approvalFlowAssert(($obj_instance->current_node_id ?? null) != $node_id, "未知或非活动节点，无法执行操作");
 
-                //格式化审批流信息
-                $obj_approval_flow_context = ApprovalFlowContext::getContextByInstance($obj_instance, $this->auth_info);
+                //执行通过方法
+                $this->obj_service_af_related_member->auditByNodeIdAndAuthInfo($obj_node, $this->auth_info, ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS, $remark);
+
+                //格式化审批流信息并继续执行
+                $obj_approval_flow_context = ApprovalFlowContext::getContextByInstance($obj_node->instance, $this->auth_info);
                 $obj_approval_flow_context->setArgs($args);
                 $obj_approval_flow_context->getCurrentNode()->execute($obj_approval_flow_context);
                 //额外事件处理
@@ -191,33 +177,74 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     }
 
     /**
-     * @explain: 审核拒绝
-     * @param $node_id
-     * @param $remark
-     * @param $operate_time
-     * @return ApprovalFlowContext
-     * @author: wzm
-     * @date: 2024/5/20 9:41
-     * @remark:
+     * @inheritDoc
      */
     public function auditRefuse($node_id, $remark = null)
     {
-        return $this->obj_service_af_instance->refuseByNodeId($node_id, $this->auth_info, $remark);
+
+        return approvalFlowTransaction(
+            function () use ($node_id, $remark) {
+                $current_node = $this->obj_service_af_node->findById($node_id);
+                $obj_instance = $current_node->instance;
+                //查找当前操作人
+                try {
+                    $current_related_member = $this->obj_service_af_related_member->findByNodeIdAndAuthInfo($node_id, $this->auth_info);
+                } catch (\Exception $e) {
+                    throw new ApprovalFlowException("当前人员无法执行驳回操作");
+                }
+                //是否驳回到上一审核节点
+                if ($current_node->reject_type == ApprovalFlowInstanceNode::REJECT_TYPE_REJECT_TO_PRE_APPROVE) {
+                    //获取上一级审核节点
+                    $node_group_by_parent_id = $obj_instance->nodes->keyBy("parent_id");
+                    $pre_node = $current_node;
+                    $ary_rollback_node_info = [];
+                    while (!empty($pre_node = $node_group_by_parent_id[$pre_node->id])) {
+                        $ary_rollback_node_info[] = $pre_node;
+                        if ($pre_node->type == ApprovalFlowInstanceNode::NODE_TYPE_APPROVE) {
+                            break;
+                        }
+                    }
+                }
+                //判断上级审核节点是否存在
+                if (!empty($pre_node)) {
+                    /**
+                     * 则将从该节点开始的所有节点状态为未操作
+                     * 将所有相关人设置为未操作
+                     */
+                    foreach ($ary_rollback_node_info as $node) {
+                        $this->obj_service_af_node->rollbackNode($node);
+                    }
+                    //设置实例的当前节点
+                    $obj_instance->current_node_id = $pre_node->id;
+                    //添加一条当前人员的拒绝记录
+                    $this->obj_service_af_operate_record->createOperateRecordByRelatedMember(
+                        $current_related_member,
+                        ApprovalFlowInstanceNodeRelatedMember::STATUS_REJECT,
+                        $remark
+                    );
+                } else {
+                    /**
+                     * 若节点为拒绝即结束，或者没有上级审批节点，则直接结束
+                     * 1. 添加拒绝记录并维护当前人员数据
+                     * 2. 结束当前实例
+                     */
+                    $this->obj_service_af_related_member->auditByNodeIdAndAuthInfo($current_node->id, $this->auth_info, ApprovalFlowInstanceNodeRelatedMember::STATUS_REJECT, $remark);
+                    $this->obj_service_af_instance->endInstance($obj_instance->id, $remark);
+                }
+                return $pre_node ?? null;
+            }
+        );
+
+
     }
 
     /**
-     * @explain: 撤回
-     * @param $instance_id
-     * @param $remark
-     * @return ApprovalFlowContext
-     * @author: wzm
-     * @date: 2024/5/20 9:42
-     * @remark:
+     * @inheritDoc
      */
     public function withdraw($instance_id, $remark = null)
     {
         return approvalFlowTransaction(
-            function ($instance_id, $remark = null) {
+            function () use ($instance_id, $remark) {
                 $obj_approval_flow_instance = $this->obj_service_af_instance->findById($instance_id);
                 approvalFlowAssert(!$obj_approval_flow_instance->allow_withdraw, "该审批流禁止撤回");
                 approvalFlowAssert($obj_approval_flow_instance->status == ApprovalFlowInstance::STATUS_WITHDRAW, "该审批流已撤回，请勿重复操作");
@@ -242,17 +269,13 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
                 $obj_approval_flow_instance->remark = $remark;
                 $obj_approval_flow_instance->end_time = date('Y-m-d H:i:s');
                 $obj_approval_flow_instance->save();
+                return true;
             }
         );
     }
 
     /**
-     * @explain: 获取当前审批流状态
-     * @param $instance_id
-     * @return mixed
-     * @author: wzm
-     * @date: 2024/5/20 9:42
-     * @remark:
+     * @inheritDoc
      */
     public function getStatus($instance_id)
     {
@@ -261,14 +284,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
 
 
     /**
-     * @explain:向节点存入新成员
-     * @param $node_id 节点id
-     * @param array<AuthInfo> $ary_insert_auth_info 要插入的用户数组-请格式化为 AuthInfo类
-     * @return mixed        插入的人员数量
-     * @throws \Throwable
-     * @author: wzm
-     * @date: 2024/6/3 10:11
-     * @remark: 若该人员已经在节点中，则该人员将会跳过
+     * @inheritDoc
      */
     public function insertMember($node_id, array $ary_insert_auth_info)
     {

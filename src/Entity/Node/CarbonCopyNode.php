@@ -6,7 +6,6 @@ namespace Js3\ApprovalFlow\Entity\Node;
 
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
-use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeRelatedMember;
 
 /**

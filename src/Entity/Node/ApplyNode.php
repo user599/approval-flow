@@ -4,11 +4,8 @@
 namespace Js3\ApprovalFlow\Entity\Node;
 
 
-use Illuminate\Support\Facades\DB;
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
-use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
-use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeRelatedMember;
 
 /**
@@ -43,7 +40,7 @@ class ApplyNode extends AbstractNode
         $obj_instance->status = ApprovalFlowInstance::STATUS_RUNNING;
         $current_date = date('Y-m-d H:i:s');
         $this->setPassTime($current_date);
-        $this->applicant->status =  ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS;
+        $this->applicant->status = ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS;
         $this->applicant->operate_time = $current_date;
         $this->applicant->remark = "申请节点自动通过";
     }

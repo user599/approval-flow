@@ -17,6 +17,8 @@ class RelatedApplicationMakeCommand extends GeneratorCommand
 
     protected $description = 'Create a new related application';
 
+    protected $type = "RelatedApplication";
+
     protected function getStub()
     {
         return $this->resolveStubPath('/stubs/related-application.stub');

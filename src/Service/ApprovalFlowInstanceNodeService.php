@@ -6,6 +6,7 @@ namespace Js3\ApprovalFlow\Service;
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
+use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeRelatedMember;
 
 /**
  * @explain:
@@ -64,34 +65,25 @@ class ApprovalFlowInstanceNodeService
     }
 
     /**
-     * @explain: 创建节点
-     * @param array $node_data
-     * @param $instance_id
-     * @param $parent_id
+     * @explain:回滚节点
+     * @param ApprovalFlowInstanceNode $node
+     * @return ApprovalFlowInstanceNode
      * @author: wzm
-     * @date: 2024/5/24 14:09
+     * @date: 2024/6/7 16:36
      * @remark:
      */
-    public function createNode(array $node_data, $instance_id, $parent_id = null,$parent_node_path = null)
+    public function rollbackNode(ApprovalFlowInstanceNode $node)
     {
-        $ary_insert_node_data = [
-            "instance_id" => $instance_id,
-            "parent_id" => $parent_id,
-            "name" => $node_data["name"],
-            "type" => $node_data["type"],
-            "metadata" => json_encode($node_data["metadata"]??null),
-            "status" => ApprovalFlowInstanceNode::STATUS_UN_OPERATE,
-        ];
-        $obj_node_instance = $this->obj_model_node->newQuery()->create($ary_insert_node_data);
-        $this->obj_service_related_member->createRelatedMember($node_data["related_member"], $instance_id, $obj_node_instance->id);
-        if (!empty($node_data['children'])) {
-            $this->createNode($node_data['children'], $instance_id, $obj_node_instance->id);
-        }
-        return $obj_node_instance;
 
+        $node->relatedMembers()->update([
+            "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_UN_OPERATE,
+            "operate_time" => null
+        ]);
+        $node->status = ApprovalFlowInstanceNode::STATUS_UN_OPERATE;
+        $node->pass_time = null;
+        $node->remark = null;
+        $node->save();
+        return $node;
     }
-
-
-
 
 }

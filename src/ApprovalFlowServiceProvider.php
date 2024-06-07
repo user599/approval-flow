@@ -12,8 +12,8 @@ use Illuminate\Support\ServiceProvider;
 use Js3\ApprovalFlow\Console\RelatedApplicationMakeCommand;
 use Js3\ApprovalFlow\Encrypter\AesEncrypter;
 use Js3\ApprovalFlow\Encrypter\Encrypter;
-use Js3\ApprovalFlow\RelatedApplication\RelatedApplicationFactory;
 use Js3\ApprovalFlow\HttpClient\HttpClient;
+use Js3\ApprovalFlow\RelatedApplication\RelatedApplicationFactory;
 
 /**
  * @explain:
@@ -52,7 +52,7 @@ class ApprovalFlowServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/Console/stubs/related-application.stub'       => base_path('stubs/related-application.stub'),
+                __DIR__ . '/Console/stubs/related-application.stub' => base_path('stubs/related-application.stub'),
             ], 'stubs');
             $this->commands([
                 RelatedApplicationMakeCommand::class
@@ -68,7 +68,7 @@ class ApprovalFlowServiceProvider extends ServiceProvider
         $this->loadRoutes();
 
         //注册数据库迁移
-        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
 
         //注册基础请求
         $this->app->singleton(HttpClient::class, function () {
@@ -108,9 +108,9 @@ class ApprovalFlowServiceProvider extends ServiceProvider
     }
 
 
-
-    public function loadRoutes() {
-        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+    public function loadRoutes()
+    {
+        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
     }
 
     /**
@@ -119,7 +119,8 @@ class ApprovalFlowServiceProvider extends ServiceProvider
      * @date: 2024/5/20 9:05
      * @remark:
      */
-    protected function addCommentTableMethodWhenMigration() {
+    protected function addCommentTableMethodWhenMigration()
+    {
         Blueprint::macro('comment', function ($comment) {
             if (!Grammar::hasMacro('compileCommentTable')) {
                 Grammar::macro('compileCommentTable', function (Blueprint $blueprint, Fluent $command, Connection $connection) {
@@ -150,9 +151,10 @@ class ApprovalFlowServiceProvider extends ServiceProvider
      * @date: 2024/5/20 9:06
      * @remark:
      */
-    private function registerRelatedApplication() {
-        foreach ($this->getConfig("related-application",[]) as $slug => $related_application_clazz) {
-            RelatedApplicationFactory::register($slug,$related_application_clazz);
+    private function registerRelatedApplication()
+    {
+        foreach ($this->getConfig("related-application", []) as $slug => $related_application_clazz) {
+            RelatedApplicationFactory::register($slug, $related_application_clazz);
         }
     }
 

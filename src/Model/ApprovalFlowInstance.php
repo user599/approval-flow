@@ -43,9 +43,8 @@ class ApprovalFlowInstance extends AbstractApprovalFlowBaseModel
     /**
      * 是否存在审核信息
      */
-    const HAS_AUDIT_TRUE  = 1;
+    const HAS_AUDIT_TRUE = 1;
     const HAS_AUDIT_FALSE = 0;
-
 
 
     /**
@@ -57,7 +56,7 @@ class ApprovalFlowInstance extends AbstractApprovalFlowBaseModel
      */
     public function nodes()
     {
-        return $this->hasMany(ApprovalFlowInstanceNode::class,"instance_id");
+        return $this->hasMany(ApprovalFlowInstanceNode::class, "instance_id");
     }
 
     /**
@@ -67,8 +66,9 @@ class ApprovalFlowInstance extends AbstractApprovalFlowBaseModel
      * @date: 2024/6/3 10:47
      * @remark:
      */
-    public function currentNode() {
-        return $this->belongsTo(ApprovalFlowInstanceNode::class,"current_node_id");
+    public function currentNode()
+    {
+        return $this->belongsTo(ApprovalFlowInstanceNode::class, "current_node_id");
     }
 
     /**
@@ -78,7 +78,8 @@ class ApprovalFlowInstance extends AbstractApprovalFlowBaseModel
      * @date: 2024/5/23 15:30
      * @remark:
      */
-    public function operateRecords() {
-        return $this->hasMany(ApprovalFlowInstanceNodeOperateRecord::class,"instance_id");
+    public function operateRecords()
+    {
+        return $this->hasMany(ApprovalFlowInstanceNodeOperateRecord::class, "instance_id");
     }
 }

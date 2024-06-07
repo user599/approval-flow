@@ -94,7 +94,8 @@ abstract class AbstractNode implements Arrayable, Jsonable, JsonSerializable
         ApprovalFlowInstanceService                  $obj_service_af_instance,
         ApprovalFlowInstanceNodeService              $obj_service_af_node,
         ApprovalFlowInstanceNodeRelatedMemberService $obj_service_af_related_member
-    ){
+    )
+    {
         $this->obj_service_af_instance = $obj_service_af_instance;
         $this->obj_service_af_node = $obj_service_af_node;
         $this->obj_service_af_related_member = $obj_service_af_related_member;
@@ -110,6 +111,7 @@ abstract class AbstractNode implements Arrayable, Jsonable, JsonSerializable
      */
     function execute(ApprovalFlowContext $context)
     {
+        $approvalFlowInstance = $context->getApprovalFlowInstance();
         //设置当前节点
         $context->setCurrentNode($this);
 
@@ -126,14 +128,14 @@ abstract class AbstractNode implements Arrayable, Jsonable, JsonSerializable
                 $this->next_node->execute($context);
             } else {
                 //没有下一个节点了，结束审批流
-                $approvalFlowInstance = $context->getApprovalFlowInstance();
+                $context->setCurrentNode(null);
                 $approvalFlowInstance->end_time = date('Y-m-d H:i:s');
                 $approvalFlowInstance->current_node_id = null;
                 $approvalFlowInstance->status = ApprovalFlowInstance::STATUS_END;
             }
         }
         //保存各类操作信息
-        $context->getApprovalFlowInstance()->push();
+        $approvalFlowInstance->push();
     }
 
     /**
@@ -196,6 +198,18 @@ abstract class AbstractNode implements Arrayable, Jsonable, JsonSerializable
     {
         $this->name = $name;
         return $this;
+    }
+
+    /**
+     * @explain:
+     * @return ApprovalFlowInstanceNode
+     * @author: wzm
+     * @date: 2024/6/7 11:27
+     * @remark:
+     */
+    public function getModel()
+    {
+        return $this->model;
     }
 
     /**
@@ -311,7 +325,7 @@ abstract class AbstractNode implements Arrayable, Jsonable, JsonSerializable
     /**
      * @param Collection<ApprovalFlowInstanceNodeRelatedMember> $related_members
      */
-    public function setRelatedMembers($related_members) : AbstractNode
+    public function setRelatedMembers($related_members): AbstractNode
     {
         $this->related_members = $related_members;
         return $this;
@@ -356,5 +370,6 @@ abstract class AbstractNode implements Arrayable, Jsonable, JsonSerializable
     {
         return $this->toJson();
     }
+
 
 }

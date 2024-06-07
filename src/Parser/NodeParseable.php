@@ -21,6 +21,7 @@ interface NodeParseable
 
     /**
      * 审批节点映射
+     * 添加新的节点和解析器时时需要添加映射关系
      */
     const NODE_PARSER_MAP = [
         ApprovalFlowInstanceNode::NODE_TYPE_APPLY => ApplyNodeParser::class,
@@ -37,6 +38,13 @@ interface NodeParseable
      */
     public function parseModelToNode(Model $data);
 
+    /**
+     * @explain: 获取节点
+     * @return AbstractNode
+     * @author: wzm
+     * @date: 2024/6/7 11:58
+     * @remark:
+     */
     public function getNode(): AbstractNode;
 
 }

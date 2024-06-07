@@ -6,10 +6,7 @@ namespace Js3\ApprovalFlow\Parser\impl;
 
 use Illuminate\Database\Eloquent\Model;
 use Js3\ApprovalFlow\Entity\Node\AbstractNode;
-use Js3\ApprovalFlow\Entity\Node\ApplyNode;
-use Js3\ApprovalFlow\Entity\Node\AuditNode;
 use Js3\ApprovalFlow\Entity\Node\CarbonCopyNode;
-use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeRelatedMember;
 use Js3\ApprovalFlow\Parser\AbstractNodeParser;
 
 /**
@@ -28,7 +25,7 @@ class CarbonCopyNodeParser extends AbstractNodeParser
 
     protected function parseExtra(AbstractNode $node, Model $model)
     {
-        $node->setCarbonCopyRecipients($model->relatedMembers??null);
+        $node->setCarbonCopyRecipients($model->relatedMembers ?? null);
     }
 
 }

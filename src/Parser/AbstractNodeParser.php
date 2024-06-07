@@ -7,7 +7,6 @@ namespace Js3\ApprovalFlow\Parser;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Model;
 use Js3\ApprovalFlow\Entity\Node\AbstractNode;
-use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
 
 /**
  * @explain:
@@ -35,8 +34,6 @@ abstract class AbstractNodeParser implements NodeParseable
     {
         $this->app = $app;
     }
-
-
 
 
     /**

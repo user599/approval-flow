@@ -6,7 +6,6 @@ namespace Js3\ApprovalFlow\Parser\impl;
 
 use Illuminate\Database\Eloquent\Model;
 use Js3\ApprovalFlow\Entity\Node\AbstractNode;
-use Js3\ApprovalFlow\Entity\Node\ApplyNode;
 use Js3\ApprovalFlow\Entity\Node\AuditNode;
 use Js3\ApprovalFlow\Parser\AbstractNodeParser;
 
@@ -33,15 +32,14 @@ class AuditNodeParser extends AbstractNodeParser
      */
     protected function parseExtra(AbstractNode $node, Model $model)
     {
-        $ary_metadata = json_decode($model->metadata,true);
-        return $node->setApproveType($ary_metadata['approve_type']??null)
-            ->setRejectType($ary_metadata['reject_type']??null)
-            ->setOtherOperate($ary_metadata['other_operate']??null)
-            ->setOperateMethod($ary_metadata['operate_method']??null)
-            ->setApprovedWhenSameWithApplicant($ary_metadata['approved_when_same_with_applicant']??null)
-            ->setApprovedWhenSameWithHistory($ary_metadata['approved_when_same_with_history']??null)
-            ->setAuditors($model->relatedMembers)
-            ;
+        $ary_metadata = json_decode($model->metadata, true);
+        return $node->setApproveType($ary_metadata['approve_type'] ?? null)
+            ->setRejectType($ary_metadata['reject_type'] ?? null)
+            ->setOtherOperate($ary_metadata['other_operate'] ?? null)
+            ->setOperateMethod($ary_metadata['operate_method'] ?? null)
+            ->setApprovedWhenSameWithApplicant($ary_metadata['approved_when_same_with_applicant'] ?? null)
+            ->setApprovedWhenSameWithHistory($ary_metadata['approved_when_same_with_history'] ?? null)
+            ->setAuditors($model->relatedMembers);
 
     }
 

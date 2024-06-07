@@ -7,7 +7,7 @@ use Illuminate\Contracts\Support\Jsonable;
 use JsonSerializable;
 
 
-class AuthInfo implements Arrayable,Jsonable,JsonSerializable
+class AuthInfo implements Arrayable, Jsonable, JsonSerializable
 {
 
 
@@ -28,7 +28,7 @@ class AuthInfo implements Arrayable,Jsonable,JsonSerializable
      * @param  $auth_type
      * @param  $auth_data
      */
-    public function __construct( $auth_data,$auth_type)
+    public function __construct($auth_data, $auth_type)
     {
         $this->auth_type = $auth_type;
         $this->auth_data = $auth_data;
@@ -43,8 +43,9 @@ class AuthInfo implements Arrayable,Jsonable,JsonSerializable
      * @date: 2024/6/3 9:12
      * @remark: 用于创建身份模型，但不存在详细当前用户的信息
      */
-    public static function createByAuthIdAndType($auth_id,$auth_type) {
-        return new self(["id" => $auth_id],$auth_type);
+    public static function createByAuthIdAndType($auth_id, $auth_type)
+    {
+        return new self(["id" => $auth_id], $auth_type);
     }
 
     /**
@@ -77,7 +78,7 @@ class AuthInfo implements Arrayable,Jsonable,JsonSerializable
      * @param  $auth_data
      * @return AuthInfo
      */
-    public function setAuthData( $auth_data): AuthInfo
+    public function setAuthData($auth_data): AuthInfo
     {
         $this->auth_data = $auth_data;
         return $this;
@@ -92,7 +93,7 @@ class AuthInfo implements Arrayable,Jsonable,JsonSerializable
      */
     public function getAuthId()
     {
-        return $this->auth_data["id"]??null;
+        return $this->auth_data["id"] ?? null;
     }
 
     /**
@@ -102,7 +103,8 @@ class AuthInfo implements Arrayable,Jsonable,JsonSerializable
      * @date: 2024/5/17 11:13
      * @remark:
      */
-    public function getAuthPayload() {
+    public function getAuthPayload()
+    {
         return [
             "id" => $this->getAuthId(),
             "type" => $this->auth_type
@@ -116,8 +118,9 @@ class AuthInfo implements Arrayable,Jsonable,JsonSerializable
      * @date: 2024/6/3 10:28
      * @remark: 将id，用户类型使用-拼接
      */
-    public function getAuthKey() {
-        return implode("-",[$this->getAuthId(),$this->getAuthType()]);
+    public function getAuthKey()
+    {
+        return implode("-", [$this->getAuthId(), $this->getAuthType()]);
     }
 
     /**
@@ -129,7 +132,8 @@ class AuthInfo implements Arrayable,Jsonable,JsonSerializable
      * @date: 2024/5/23 17:21
      * @remark:
      */
-    public function isSameMember($auth_id,$auth_type):bool {
+    public function isSameMember($auth_id, $auth_type): bool
+    {
         return $auth_id == $this->getAuthId() && $auth_type == $this->getAuthType();
     }
 
@@ -144,7 +148,7 @@ class AuthInfo implements Arrayable,Jsonable,JsonSerializable
     /**
      * Convert the model instance to JSON.
      *
-     * @param  int  $options
+     * @param int $options
      * @return string
      *
      * @throws \Illuminate\Database\Eloquent\JsonEncodingException

@@ -20,10 +20,13 @@ class ApprovalFlowInstanceNodeRelatedMember extends AbstractApprovalFlowBaseMode
     protected $guarded = [];
 
 
-    const STATUS_UN_OPERATE = 0;
-    const STATUS_PASS = 1;
-    const STATUS_REJECT = 2;
-    const STATUS_WITHDRAW = 3;
+    /**
+     * 人员状态
+     */
+    const STATUS_UN_OPERATE = 0;        //未操作
+    const STATUS_PASS = 1;          //通过
+    const STATUS_REJECT = 2;        //拒绝
+    const STATUS_WITHDRAW = 3;      //撤回
 
     /**
      * @explain: 所属实例
@@ -56,8 +59,9 @@ class ApprovalFlowInstanceNodeRelatedMember extends AbstractApprovalFlowBaseMode
      * @date: 2024/5/30 14:41
      * @remark:
      */
-    public function operateRecords() {
-        return $this->hasMany(ApprovalFlowInstanceNodeOperateRecord::class,"related_member_id");
+    public function operateRecords()
+    {
+        return $this->hasMany(ApprovalFlowInstanceNodeOperateRecord::class, "related_member_id");
     }
 
     /**
@@ -69,8 +73,9 @@ class ApprovalFlowInstanceNodeRelatedMember extends AbstractApprovalFlowBaseMode
      * @date: 2024/5/30 14:41
      * @remark: newQuery()->ofAuth($auth_info)->get()
      */
-    public function scopeOfAuth($query,AuthInfo $authInfo) {
-        return $query->where("member_id",$authInfo->getAuthId())
-            ->where("member_type",$authInfo->getAuthType());
+    public function scopeOfAuth($query, AuthInfo $authInfo)
+    {
+        return $query->where("member_id", $authInfo->getAuthId())
+            ->where("member_type", $authInfo->getAuthType());
     }
 }

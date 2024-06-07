@@ -7,11 +7,11 @@ namespace Js3\ApprovalFlow\Controller;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Js3\ApprovalFlow\Encrypter\Encrypter;
 use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
-use Js3\ApprovalFlow\RelatedApplication\RelatedApplicationFactory;
+use Js3\ApprovalFlow\Middleware\CheckApprovalFlowAuthMiddleware;
 use Js3\ApprovalFlow\RelatedApplication\RelatedApplication;
+use Js3\ApprovalFlow\RelatedApplication\RelatedApplicationFactory;
 
 /**
  * @explain: 审批流关联应用相关控制器
@@ -47,19 +47,19 @@ class ApprovalFlowRelatedApplicationController extends Controller
      * @date: 2024/5/20 9:15
      * @remark:
      */
-    public function getOptions($slug,Request $request): array
+    public function getOptions($slug, Request $request): array
     {
         /** @var RelatedApplication $generator */
         $generator = $this->application->make(RelatedApplicationFactory::chooseRelatedApplication($slug));
-        return $generator->options($request->offsetGet('auth_info'));
+        return $generator->options($request->offsetGet(CheckApprovalFlowAuthMiddleware::AUTH_KEY));
 
     }
 
     /**
      * @explain: 获取指定选项下的所有子集
-     * @param string $slug     关联应用标识
-     * @param int $id       指定选项的id
-     * @param Request $request  请求参数
+     * @param string $slug 关联应用标识
+     * @param int $id 指定选项的id
+     * @param Request $request 请求参数
      * @return array
      * @throws ApprovalFlowException
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
@@ -67,11 +67,11 @@ class ApprovalFlowRelatedApplicationController extends Controller
      * @date: 2024/5/20 9:16
      * @remark:
      */
-    public function getChildren($slug, $id,Request $request): array
+    public function getChildren($slug, $id, Request $request): array
     {
         /** @var RelatedApplication $generator */
         $generator = $this->application->make(RelatedApplicationFactory::chooseRelatedApplication($slug));
-        return $generator->children($request->offsetGet('auth_info'), $id);
+        return $generator->children($request->offsetGet(CheckApprovalFlowAuthMiddleware::AUTH_KEY), $id);
     }
 
 }

@@ -38,7 +38,7 @@ if (!function_exists('approvalFlowAssert')) {
 
     /**
      * @explain:断言-默认抛出 ApprovalFlowException
-     * @param bool $condition 断言条件
+     * @param bool $condition 断言条件，为 true 则抛出异常
      * @param string $message 断言提示
      * @param Exception|null $clazz 要自定义抛出的异常类
      * @throws ApprovalFlowException
@@ -63,7 +63,6 @@ if (!function_exists('approvalFlowEnableQueryLog')) {
 
     /**
      * @explain: 开启打印sql日志
-     * @param $callback
      * @return mixed
      * @throws Throwable
      * @author: wzm
@@ -81,7 +80,6 @@ if (!function_exists('approvalFlowGetQueryLog')) {
 
     /**
      * @explain: 打印sql日志
-     * @param $callback
      * @return mixed
      * @throws Throwable
      * @author: wzm

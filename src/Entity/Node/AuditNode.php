@@ -106,16 +106,17 @@ class AuditNode extends AbstractNode
     {
         //若当前节点审核类型是与签（所有人都同意
         if ($this->approve_type == ApprovalFlowInstanceNode::APPROVE_TYPE_UNION) {
-            return collect($this->auditors)->filter(function ($item) {
-                    return $item->status !== ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS;
-                })->count() > 0;
+            $not_pass_count = collect($this->auditors)->filter(function ($item) {
+                return $item->status != ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS;
+            })->count();
+            return $not_pass_count == 0;
         } elseif ($this->approve_type == ApprovalFlowInstanceNode::APPROVE_TYPE_OR) {
             //或签，只要有一个同意即可
             return collect($this->auditors)->filter(function ($item) {
                     return $item->status == ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS;
                 })->count() > 0;
         } else {
-            throw new ApprovalFlowException("审核节点[{$this->name}]的审核类型异常:{$this->approve_type}，请联系管理员");
+            throw new ApprovalFlowException("审核节点[{$this->name}]的审核类型异常:{$this->approve_type}");
         }
 
     }

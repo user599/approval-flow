@@ -174,10 +174,10 @@ class HttpClient
                 $promise = $handler($request, $options);
                 return $promise->then(function (ResponseInterface $response) {
                     $response_body = $this->formatResponse($response);
+                    //状态码正常
                     if (
                         $response->getStatusCode() >= 400
-                        ||
-                        (!empty($response_body) && !($response_body["status"] ?? false))
+                        || (!empty($response_body) && !($response_body["status"] ?? false))
                     ) {
                         $msg = $response_body["msg"] ?? '服务器错误';
                         throw new RemoteCallErrorException("请求远程服务器失败:" . $msg, $response);

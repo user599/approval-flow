@@ -105,10 +105,7 @@ class AuthInfo implements Arrayable, Jsonable, JsonSerializable
      */
     public function getAuthPayload()
     {
-        return [
-            "id" => $this->getAuthId(),
-            "type" => $this->auth_type
-        ];
+        return $this->toArray();
     }
 
     /**

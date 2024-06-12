@@ -51,7 +51,7 @@ class ApprovalFlowRelatedApplicationController extends Controller
     {
         /** @var RelatedApplication $generator */
         $generator = $this->application->make(RelatedApplicationFactory::chooseRelatedApplication($slug));
-        return $generator->options($request->offsetGet(CheckApprovalFlowAuthMiddleware::AUTH_KEY));
+        return $generator->options($request->offsetGet(CheckApprovalFlowAuthMiddleware::CACHE_AUTH_KEY));
 
     }
 
@@ -71,7 +71,7 @@ class ApprovalFlowRelatedApplicationController extends Controller
     {
         /** @var RelatedApplication $generator */
         $generator = $this->application->make(RelatedApplicationFactory::chooseRelatedApplication($slug));
-        return $generator->children($request->offsetGet(CheckApprovalFlowAuthMiddleware::AUTH_KEY), $id);
+        return $generator->children($request->offsetGet(CheckApprovalFlowAuthMiddleware::CACHE_AUTH_KEY), $id);
     }
 
 }

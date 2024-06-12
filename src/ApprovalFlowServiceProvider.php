@@ -121,28 +121,31 @@ class ApprovalFlowServiceProvider extends ServiceProvider
      */
     protected function addCommentTableMethodWhenMigration()
     {
-        Blueprint::macro('comment', function ($comment) {
-            if (!Grammar::hasMacro('compileCommentTable')) {
-                Grammar::macro('compileCommentTable', function (Blueprint $blueprint, Fluent $command, Connection $connection) {
-                    switch ($database_driver = $connection->getDriverName()) {
-                        case 'mysql':
-                            return 'alter table ' . $this->wrapTable($blueprint) . $this->modifyComment($blueprint, $command);
-                        case 'pgsql':
-                            return sprintf(
-                                'comment on table %s is %s',
-                                $this->wrapTable($blueprint),
-                                "'" . str_replace("'", "''", $command->comment) . "'"
-                            );
-                        case 'sqlserver':
-                        case 'sqlite':
-                        default:
-                            throw new Exception("The {$database_driver} not support table comment.");
-                    }
-                });
-            }
+        if (!Blueprint::hasMacro('comment')) {
+            Blueprint::macro('comment', function ($comment) {
+                if (!Grammar::hasMacro('compileCommentTable')) {
+                    Grammar::macro('compileCommentTable', function (Blueprint $blueprint, Fluent $command, Connection $connection) {
+                        switch ($database_driver = $connection->getDriverName()) {
+                            case 'mysql':
+                                return 'alter table ' . $this->wrapTable($blueprint) . $this->modifyComment($blueprint, $command);
+                            case 'pgsql':
+                                return sprintf(
+                                    'comment on table %s is %s',
+                                    $this->wrapTable($blueprint),
+                                    "'" . str_replace("'", "''", $command->comment) . "'"
+                                );
+                            case 'sqlserver':
+                            case 'sqlite':
+                            default:
+                                throw new Exception("The {$database_driver} not support table comment.");
+                        }
+                    });
+                }
 
-            return $this->addCommand('commentTable', compact('comment'));
-        });
+                return $this->addCommand('commentTable', compact('comment'));
+            });
+        }
+
     }
 
     /**

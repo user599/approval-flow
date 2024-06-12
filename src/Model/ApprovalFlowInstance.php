@@ -41,13 +41,6 @@ class ApprovalFlowInstance extends AbstractApprovalFlowBaseModel
     const WITHDRAW_TYPE_END = 3;
 
     /**
-     * 是否存在审核信息
-     */
-    const HAS_AUDIT_TRUE = 1;
-    const HAS_AUDIT_FALSE = 0;
-
-
-    /**
      * @explain:节点信息
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      * @author: wzm

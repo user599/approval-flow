@@ -17,9 +17,15 @@ use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 class CheckApprovalFlowAuthMiddleware
 {
 
+    /**
+     * 请求头中的键名
+     */
     const HEADER_KEY = "token";
 
-    const AUTH_KEY = "approval-flow-auth";
+    /**
+     * 缓存用户信息的键名
+     */
+    const CACHE_AUTH_KEY = "approval-flow-auth";
 
     /**
      * @var Encrypter
@@ -55,7 +61,7 @@ class CheckApprovalFlowAuthMiddleware
                 throw new ApprovalFlowException("身份验证失败：缺少必要参数");
             }
             $auth_info = new AuthInfo($auth_info['auth_data'], $auth_info['auth_type']);
-            $request->offsetSet(self::AUTH_KEY, $auth_info);
+            $request->offsetSet(self::CACHE_AUTH_KEY, $auth_info);
         }
         return $next($request);
     }

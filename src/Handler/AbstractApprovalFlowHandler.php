@@ -4,11 +4,6 @@
 namespace Js3\ApprovalFlow\Handler;
 
 
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
 use Js3\ApprovalFlow\Entity\AuthInfo;
 use Js3\ApprovalFlow\Entity\Node\AuditNode;
@@ -24,7 +19,6 @@ use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeRelatedMemberService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceService;
 use Js3\ApprovalFlow\Utils\CacheUtils;
-use Throwable;
 
 /**
  * @explain:抄送审批流处理
@@ -71,9 +65,6 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
 
     /**
      * @param AuthInfo 身份信息，需要用户自行填入
-     *
-     * @param HttpClient $http_client http客户端
-     *          使用app(HttpClient::class) 或 App::make(HttpClient::class)即可
      */
     public function __construct(?AuthInfo $auth_info = null)
     {
@@ -157,7 +148,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
                 approvalFlowAssert(($obj_instance->current_node_id ?? null) != $node_id, "未知或非活动节点，无法执行操作");
 
                 //执行通过方法
-                $this->obj_service_af_related_member->auditByNodeIdAndAuthInfo($obj_node, $this->auth_info, ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS, $remark);
+                $this->obj_service_af_related_member->auditByNodeIdAndAuthInfo($obj_node->id, $this->auth_info, ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS, $remark);
 
                 //格式化审批流信息并继续执行
                 $obj_approval_flow_context = ApprovalFlowContext::getContextByInstance($obj_node->instance, $this->auth_info);
@@ -248,6 +239,11 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
                 $obj_approval_flow_instance = $this->obj_service_af_instance->findById($instance_id);
                 approvalFlowAssert(!$obj_approval_flow_instance->allow_withdraw, "该审批流禁止撤回");
                 approvalFlowAssert($obj_approval_flow_instance->status == ApprovalFlowInstance::STATUS_WITHDRAW, "该审批流已撤回，请勿重复操作");
+
+                //只有发起人能撤回
+                $same_with_creator = $this->auth_info->isSameMember($obj_approval_flow_instance->creator_id, $obj_approval_flow_instance->creator_type);
+                approvalFlowAssert(!$same_with_creator,"只有发起人可以撤销审批流");
+
                 //验证撤回类型
                 switch ($obj_withdraw_type = $obj_approval_flow_instance->withdraw_type) {
                     case ApprovalFlowInstance::WITHDRAW_TYPE_NOT_IN_PROGRESS:
@@ -263,7 +259,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
                         break;
                     default:
                         throw new ApprovalFlowException("未知的撤回类型:{$obj_withdraw_type}");
-                };
+                }
                 //设置实例为已撤回
                 $obj_approval_flow_instance->status = ApprovalFlowInstance::STATUS_WITHDRAW;
                 $obj_approval_flow_instance->remark = $remark;
@@ -322,8 +318,6 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
                         "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_UN_OPERATE,
                     ]);
                 });
-                $obj_node_info->updated_at = date('Y-m-d H:i:s');
-                $obj_node_info->save();
                 $obj_node_info->relatedMembers()->saveMany($col_insert_member);
                 return $col_insert_member->count();
             }

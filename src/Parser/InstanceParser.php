@@ -86,15 +86,13 @@ class InstanceParser
                 $ary_node_base_info = [
                     "name" => $node["name"],
                     "type" => $node["type"],
-                    "metadata" => json_encode($node["metadata"] ?? null),
-                    "status" => ApprovalFlowInstanceNode::STATUS_UN_OPERATE,
+                    "metadata" => empty($node["metadata"] ) ? null : json_encode($node["metadata"]),
                 ];
                 $ary_node_base_info["related_member"] = collect($node["related_member"])
                     ->map(function ($member) {
                         return [
                             "member_id" => $member["member_id"],
                             "member_type" => $member["member_type"],
-                            "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_UN_OPERATE
                         ];
                     });
                 return $ary_node_base_info;
@@ -123,6 +121,7 @@ class InstanceParser
             foreach ($ary_data["node"] as $node_data) {
                 $ary_node_base_data = Arr::except($node_data, "related_member");
                 $ary_node_base_data["parent_id"] = $node_parent_id;
+                $ary_node_base_data["status"] = ApprovalFlowInstanceNode::STATUS_UN_OPERATE;
                 $obj_node = new ApprovalFlowInstanceNode($ary_node_base_data);
                 $obj_instance->nodes()->save($obj_node);
                 //处理关联人员
@@ -130,8 +129,11 @@ class InstanceParser
                 foreach ($node_data["related_member"] as $related_member) {
                     //添加冗余字段方便查询
                     $related_member["instance_id"] = $obj_instance->id;
+                    $related_member["status"] = ApprovalFlowInstanceNodeRelatedMember::STATUS_UN_OPERATE;
                     $ary_related_member_base_data[] = new ApprovalFlowInstanceNodeRelatedMember($related_member);
                 }
+
+                //
                 $obj_node->relatedMembers()->saveMany($ary_related_member_base_data);
                 $node_parent_id = $obj_node->id;
             }

@@ -20,6 +20,7 @@ class CreateApprovalFlowInstanceOperateRecordTable extends Migration
             $table->unsignedBigInteger("related_member_id")->comment("相关人id");
             $table->unsignedTinyInteger("status")->default(1)->comment("任务状态:");
             $table->dateTime("operate_time")->nullable()->comment("操作时间");
+            $table->string("remark")->nullable()->comment("备注");
             $table->dateTime('created_at')->nullable();
             $table->dateTime('updated_at')->nullable();
             $table->dateTime('deleted_at')->nullable();

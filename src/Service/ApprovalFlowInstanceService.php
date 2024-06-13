@@ -75,7 +75,7 @@ class ApprovalFlowInstanceService
      * @param $remark
      * @author: wzm
      * @date: 2024/6/3 15:57
-     * @remark:
+     * @remark: 结束并不会将当前节点id置空
      */
     public function endInstance($instance_id, $remark = null)
     {

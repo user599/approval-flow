@@ -52,6 +52,14 @@ class ApprovalFlowInstanceNode extends AbstractApprovalFlowBaseModel
     const REJECT_TYPE_REJECT_TO_PRE_APPROVE = 2;
 
     /**
+     * 审批操作：1通过 2驳回 3确认 4回复
+     */
+    const APPROVE_OPERATION_PASS = 1;
+    const APPROVE_OPERATION_REFUSE = 2;
+    const APPROVE_OPERATION_CONFIRM = 3;
+    const APPROVE_OPERATION_REPLY = 4;
+
+    /**
      * @explain:所属实例
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      * @author: wzm

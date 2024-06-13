@@ -2,11 +2,10 @@
 
 namespace Js3\ApprovalFlow\Handler;
 
-
 use Js3\ApprovalFlow\Entity\ApprovalFlowContext;
 use Js3\ApprovalFlow\Entity\AuthInfo;
+use Js3\ApprovalFlow\Entity\Node\AbstractNode;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
-use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
 use Throwable;
 
 interface ApprovalFlowHandler
@@ -15,29 +14,34 @@ interface ApprovalFlowHandler
 
     /**
      * @explain: 生成审批流
-     * @param $form_data
+     * @param $form_data 表单数据
+     * @return array
      * @author: wzm
      * @date: 2024/5/17 14:45
-     * @remark:
+     * @remark: 基于如下数据获取审批流实例
+     *          1.审批标识 protected $approval_flow_slug;
+     *          2.当前用户信息     protected $auth_info;
+     *          3.表单数据
+     * @remark: 本方法会先将实例数据放入缓存，在执行审批流时才实例化到数据库中
      */
     public function generate($form_data = []);
 
     /**
      * @explain: 执行审批流
-     * @param int $instance_id
-     * @param array $args
+     * @param int $instance_id 实例id
+     * @param array $args 额外参数，可以在后续调用中使用，如：审批、抄送后置处理
      * @return ApprovalFlowContext
      * @throws ApprovalFlowException|Throwable
      * @author: wzm
      * @date: 2024/5/20 9:41
      * @remark:
      */
-    public function execute($instance_id, $args): ApprovalFlowContext;
+    public function execute($instance_id, $args);
 
     /**
      * @explain: 通过
-     * @param $node_id
-     * @param $remark
+     * @param int $node_id
+     * @param string $remark
      * @return ApprovalFlowContext
      * @author: wzm
      * @date: 2024/5/17 14:45
@@ -47,9 +51,9 @@ interface ApprovalFlowHandler
 
     /**
      * @explain: 拒绝
-     * @param $node_id
-     * @param $remark
-     * @return ApprovalFlowInstanceNode|null
+     * @param int $node_id
+     * @param string $remark
+     * @return AbstractNode|null
      * @author: wzm
      * @date: 2024/5/17 14:45
      * @remark:返回空说明直接结束
@@ -59,23 +63,24 @@ interface ApprovalFlowHandler
 
     /**
      * @explain:撤销
-     * @param $remark
+     * @param int $instance_id
+     * @param string $remark
      * @return mixed
      */
     public function withdraw($instance_id, $remark = null);
 
     /**
      * @explain 获取审批实例状态
-     * @param $instance_id
-     * @return mixed
+     * @param int $instance_id
+     * @return ApprovalFlowContext
      */
     public function getStatus($instance_id);
 
     /**
      * @explain:向节点存入新成员
-     * @param $node_id 节点id
+     * @param int $node_id 节点id
      * @param array<AuthInfo> $ary_auth_info 要插入的用户数组-请格式化为 AuthInfo类
-     * @return mixed        插入的人员数量
+     * @return int        插入的人员数量
      * @throws \Throwable
      * @author: wzm
      * @date: 2024/6/3 10:11

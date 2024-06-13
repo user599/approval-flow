@@ -105,7 +105,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
     /**
      * @inheritDoc
      */
-    public function execute($cache_id, $args = []): ApprovalFlowContext
+    public function execute($cache_id, $args = [])
     {
         return approvalFlowTransaction(function () use ($cache_id, $args) {
             //取出缓存信息并创建审批流实例
@@ -199,8 +199,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
                     $ary_rollback_model_node_info = [
                         $current_model_node
                     ];
-                    while (!empty($model_node_group_id[$pre_model_node->parent_id])) {
-                        $pre_model_node = $model_node_group_id[$pre_model_node->parent_id];
+                    while (!empty($pre_model_node = ($model_node_group_id[$pre_model_node->parent_id]??null))) {
                         $ary_rollback_model_node_info[] = $pre_model_node;
                         if ($pre_model_node->type == ApprovalFlowInstanceNode::NODE_TYPE_APPROVE) {
                             break;
@@ -213,7 +212,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
                      * 则将从该节点开始的所有节点状态为未操作
                      * 将所有相关人设置为未操作
                      */
-                    foreach ($ary_rollback_model_node_info as $node) {
+                    foreach ($ary_rollback_model_node_info??[] as $node) {
                         $this->obj_service_af_node->rollbackNode($node);
                     }
                     //设置实例的当前节点

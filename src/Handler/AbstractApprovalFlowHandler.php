@@ -14,6 +14,8 @@ use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNodeRelatedMember;
 use Js3\ApprovalFlow\Parser\InstanceParser;
+use Js3\ApprovalFlow\Parser\NodeFactory;
+use Js3\ApprovalFlow\Parser\NodeParseable;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeOperateRecordService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeRelatedMemberService;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceNodeService;
@@ -175,8 +177,12 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
 
         return approvalFlowTransaction(
             function () use ($node_id, $remark) {
-                $current_node = $this->obj_service_af_node->findById($node_id);
-                $obj_instance = $current_node->instance;
+                $current_model_node = $this->obj_service_af_node->findById($node_id);
+
+                approvalFlowAssert(empty($obj_instance = $current_model_node->instance), "未知或已删除的审批流信息-[{$current_model_node->instance_id}]");
+                approvalFlowAssert($obj_instance->status != ApprovalFlowInstance::STATUS_RUNNING, "审批流未开始或已结束");
+                approvalFlowAssert(($obj_instance->current_node_id ?? null) != $node_id, "未知或非活动节点，无法执行操作");
+
                 //查找当前操作人
                 try {
                     $current_related_member = $this->obj_service_af_related_member->findByNodeIdAndAuthInfo($node_id, $this->auth_info);
@@ -184,29 +190,34 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
                     throw new ApprovalFlowException("当前人员无法执行驳回操作");
                 }
                 //是否驳回到上一审核节点
-                if ($current_node->reject_type == ApprovalFlowInstanceNode::REJECT_TYPE_REJECT_TO_PRE_APPROVE) {
+                $current_node = NodeFactory::make($current_model_node);
+                if ($current_node instanceof AuditNode
+                    && $current_node->getRejectType() == ApprovalFlowInstanceNode::REJECT_TYPE_REJECT_TO_PRE_APPROVE) {
                     //获取上一级审核节点
-                    $node_group_by_parent_id = $obj_instance->nodes->keyBy("parent_id");
-                    $pre_node = $current_node;
-                    $ary_rollback_node_info = [];
-                    while (!empty($pre_node = $node_group_by_parent_id[$pre_node->id])) {
-                        $ary_rollback_node_info[] = $pre_node;
-                        if ($pre_node->type == ApprovalFlowInstanceNode::NODE_TYPE_APPROVE) {
+                    $model_node_group_id = $obj_instance->nodes->keyBy("id");
+                    $pre_model_node = $current_model_node;
+                    $ary_rollback_model_node_info = [
+                        $current_model_node
+                    ];
+                    while (!empty($model_node_group_id[$pre_model_node->parent_id])) {
+                        $pre_model_node = $model_node_group_id[$pre_model_node->parent_id];
+                        $ary_rollback_model_node_info[] = $pre_model_node;
+                        if ($pre_model_node->type == ApprovalFlowInstanceNode::NODE_TYPE_APPROVE) {
                             break;
                         }
                     }
                 }
                 //判断上级审核节点是否存在
-                if (!empty($pre_node)) {
+                if (!empty($pre_model_node)) {
                     /**
                      * 则将从该节点开始的所有节点状态为未操作
                      * 将所有相关人设置为未操作
                      */
-                    foreach ($ary_rollback_node_info as $node) {
+                    foreach ($ary_rollback_model_node_info as $node) {
                         $this->obj_service_af_node->rollbackNode($node);
                     }
                     //设置实例的当前节点
-                    $obj_instance->current_node_id = $pre_node->id;
+                    $obj_instance->current_node_id = $pre_model_node->id;
                     //添加一条当前人员的拒绝记录
                     $this->obj_service_af_operate_record->createOperateRecordByRelatedMember(
                         $current_related_member,
@@ -219,10 +230,11 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
                      * 1. 添加拒绝记录并维护当前人员数据
                      * 2. 结束当前实例
                      */
-                    $this->obj_service_af_related_member->auditByNodeIdAndAuthInfo($current_node->id, $this->auth_info, ApprovalFlowInstanceNodeRelatedMember::STATUS_REJECT, $remark);
+                    $this->obj_service_af_related_member->auditByNodeIdAndAuthInfo($current_model_node->id, $this->auth_info, ApprovalFlowInstanceNodeRelatedMember::STATUS_REJECT, $remark);
                     $this->obj_service_af_instance->endInstance($obj_instance->id, $remark);
                 }
-                return $pre_node ?? null;
+                $obj_instance->save();
+                return empty($pre_model_node) ? null : NodeFactory::make($pre_model_node);
             }
         );
 
@@ -242,7 +254,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
 
                 //只有发起人能撤回
                 $same_with_creator = $this->auth_info->isSameMember($obj_approval_flow_instance->creator_id, $obj_approval_flow_instance->creator_type);
-                approvalFlowAssert(!$same_with_creator,"只有发起人可以撤销审批流");
+                approvalFlowAssert(!$same_with_creator, "只有发起人可以撤销审批流");
 
                 //验证撤回类型
                 switch ($obj_withdraw_type = $obj_approval_flow_instance->withdraw_type) {

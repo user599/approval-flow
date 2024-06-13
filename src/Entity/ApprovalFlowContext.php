@@ -10,6 +10,7 @@ use Illuminate\Support\Collection;
 use Js3\ApprovalFlow\Entity\Node\AbstractNode;
 use Js3\ApprovalFlow\Exceptions\ApprovalFlowException;
 use Js3\ApprovalFlow\Model\ApprovalFlowInstance;
+use Js3\ApprovalFlow\Parser\NodeFactory;
 use Js3\ApprovalFlow\Parser\NodeParseable;
 use Js3\ApprovalFlow\Service\ApprovalFlowInstanceService;
 use JsonSerializable;
@@ -95,18 +96,7 @@ class ApprovalFlowContext implements Arrayable, Jsonable, JsonSerializable
         $approvalFlowContext->setApprovalFlowInstance($obj_instance);
         //使用节点格式化器格式化节点内容
         foreach ($obj_instance->nodes as $model_node) {
-            $parse_clazz = NodeParseable::NODE_PARSER_MAP[$model_node->type] ?? null;
-            if (empty($parse_clazz)) {
-                throw new ApprovalFlowException("未配置该类型节点的解析器:{$model_node->type}");
-            }
-            /** @var NodeParseable $parse_clazz */
-            try {
-                $parser = app($parse_clazz);
-            } catch (\Exception $e) {
-                throw new ApprovalFlowException("解析器实例化失败:{$parse_clazz}-{$e->getMessage()}");
-            }
-            $parser->parseModelToNode($model_node);
-            $node = $parser->getNode();
+            $node = NodeFactory::make($model_node);
             //TODO 可以通过添加后置拦截器的方式优化后置的审核/抄送额外操作
             $approvalFlowContext->node_list->add($node);
         }

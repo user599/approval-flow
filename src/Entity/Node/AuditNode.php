@@ -227,5 +227,15 @@ class AuditNode extends AbstractNode
         return $this;
     }
 
+    /**
+     * @return int
+     */
+    public function getRejectType(): int
+    {
+        return $this->reject_type;
+    }
+
+
+
 
 }

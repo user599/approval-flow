@@ -77,11 +77,11 @@ class ApprovalFlowInstanceNodeService
 
         $node->relatedMembers()->update([
             "status" => ApprovalFlowInstanceNodeRelatedMember::STATUS_UN_OPERATE,
-            "operate_time" => null
+            "remark" => null,
+            "operate_time" => null,
         ]);
         $node->status = ApprovalFlowInstanceNode::STATUS_UN_OPERATE;
         $node->pass_time = null;
-        $node->remark = null;
         $node->save();
         return $node;
     }

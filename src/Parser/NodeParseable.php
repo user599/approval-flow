@@ -6,10 +6,6 @@ namespace Js3\ApprovalFlow\Parser;
 
 use Illuminate\Database\Eloquent\Model;
 use Js3\ApprovalFlow\Entity\Node\AbstractNode;
-use Js3\ApprovalFlow\Model\ApprovalFlowInstanceNode;
-use Js3\ApprovalFlow\Parser\impl\ApplyNodeParser;
-use Js3\ApprovalFlow\Parser\impl\AuditNodeParser;
-use Js3\ApprovalFlow\Parser\impl\CarbonCopyNodeParser;
 
 /**
  * @explain:
@@ -18,16 +14,6 @@ use Js3\ApprovalFlow\Parser\impl\CarbonCopyNodeParser;
  */
 interface NodeParseable
 {
-
-    /**
-     * 审批节点映射
-     * 添加新的节点和解析器时时需要添加映射关系
-     */
-    const NODE_PARSER_MAP = [
-        ApprovalFlowInstanceNode::NODE_TYPE_APPLY => ApplyNodeParser::class,
-        ApprovalFlowInstanceNode::NODE_TYPE_APPROVE => AuditNodeParser::class,
-        ApprovalFlowInstanceNode::NODE_TYPE_CARBON_COPY => CarbonCopyNodeParser::class,
-    ];
 
     /**
      * @explain:将雄辩模型转换为节点

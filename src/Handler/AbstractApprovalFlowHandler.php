@@ -99,6 +99,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
          */
         $ary_parse_data = InstanceParser::parseFromResponseToArr($approval_data, $this->auth_info);
         $ary_parse_data["id"] = CacheUtils::setCache($ary_parse_data);
+
         return $ary_parse_data;
     }
 
@@ -267,6 +268,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
                         break;
                     case ApprovalFlowInstance::WITHDRAW_TYPE_END:
                         //结束后撤回，任意时刻可以撤回
+
                         break;
                     default:
                         throw new ApprovalFlowException("未知的撤回类型:{$obj_withdraw_type}");

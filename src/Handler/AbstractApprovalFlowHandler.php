@@ -124,9 +124,9 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
             //额外事件处理
             foreach ($obj_approval_flow_context->getExecutedNodes() as $executedNode) {
                 if ($executedNode instanceof AuditNode) {
-                    $this->handleAuditExtraOperate($executedNode);
+                    $this->handleAuditExtraOperate($executedNode,$args);
                 } elseif ($executedNode instanceof CarbonCopyNode) {
-                    $this->handleCarbonCopyExtraOperate($executedNode);
+                    $this->handleCarbonCopyExtraOperate($executedNode,$args);
                 }
             }
             return $obj_approval_flow_context;
@@ -345,7 +345,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      * @date: 2024/5/17 15:08
      * @remark:
      */
-    abstract function handleAuditExtraOperate(AuditNode $node);
+    abstract function handleAuditExtraOperate(AuditNode $node,$args = []);
 
     /**
      * @explain: 抄送额外操作
@@ -355,7 +355,7 @@ abstract class AbstractApprovalFlowHandler implements ApprovalFlowHandler
      * @date: 2024/5/17 15:08
      * @remark:
      */
-    abstract function handleCarbonCopyExtraOperate(CarbonCopyNode $node);
+    abstract function handleCarbonCopyExtraOperate(CarbonCopyNode $node,$args = []);
 
 
     /**

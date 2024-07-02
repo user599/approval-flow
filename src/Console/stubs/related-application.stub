@@ -22,8 +22,6 @@ class DummyClass implements RelatedApplication
     }
 
 
-    }
-
     /**
      * @inheritDoc
      */

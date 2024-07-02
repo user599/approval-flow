@@ -19,6 +19,9 @@ class CreateApprovalFlowInstanceNodeRelatedMemberTable extends Migration
             $table->unsignedBigInteger("instance_id")->comment("实例id");
             $table->unsignedBigInteger("member_id")->comment("人员id");
             $table->string("member_type")->comment("人员类型");
+            $table->integer("user_no")->nullable()->comment("人员工号");
+            $table->string("avatar")->nullable()->comment("头像");
+            $table->string("name")->comment("名称");
             $table->unsignedTinyInteger("status")->comment("状态,");
             $table->dateTime("operate_time")->nullable()->comment("操作时间");
             $table->dateTime('created_at')->nullable();

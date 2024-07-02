@@ -93,6 +93,9 @@ class InstanceParser
                         return [
                             "member_id" => $member["member_id"],
                             "member_type" => $member["member_type"],
+                            "name" => $member["name"],
+                            "avatar" => $member["avatar"]??null,
+                            "user_no" => $member["user_no"]??null,
                         ];
                     });
                 return $ary_node_base_info;

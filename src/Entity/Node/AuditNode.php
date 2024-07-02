@@ -105,6 +105,9 @@ class AuditNode extends AbstractNode
     protected function canContinueExecute(ApprovalFlowContext $context)
     {
         //若当前节点审核类型是与签（所有人都同意
+        if($this->auditors->count() == 0) {
+            return true;
+        }
         if ($this->approve_type == ApprovalFlowInstanceNode::APPROVE_TYPE_UNION) {
             $not_pass_count = collect($this->auditors)->filter(function ($item) {
                 return $item->status != ApprovalFlowInstanceNodeRelatedMember::STATUS_PASS;
